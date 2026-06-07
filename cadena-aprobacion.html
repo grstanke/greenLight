@@ -398,6 +398,11 @@
         Panel General
         <span class="nav-badge" id="pending-badge">0</span>
       </div>
+      <div class="nav-item" id="nav-myturn" onclick="showView('myturn')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Mi Turno
+        <span class="nav-badge" id="myturn-badge" style="display:none;background:var(--red)">0</span>
+      </div>
       <div class="nav-item" id="nav-mine" onclick="showView('mine')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><path d="M20 12V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2h8"/><circle cx="18" cy="18" r="3"/><path d="M21 21l-1.5-1.5"/></svg>
         Mis Aprobaciones
@@ -970,12 +975,14 @@ function updateStats(){
   document.getElementById('stat-approved').textContent = requests.filter(r=>getRequestStatus(r)==='approved').length;
   document.getElementById('stat-rejected').textContent = requests.filter(r=>getRequestStatus(r)==='rejected').length;
   document.getElementById('pending-badge').textContent = requests.filter(r=>getRequestStatus(r)==='pending').length;
-  // Badge "Mis Aprobaciones": solicitudes pendientes donde es mi turno de aprobar
+  // Badge "Mi Turno": solicitudes donde es exactamente el turno activo del usuario
   const myTurn = requests.filter(r=>{
     if(getRequestStatus(r)!=='pending') return false;
     const idx=getCurrentApproverIdx(r);
     return idx!==-1 && r.approvers[idx].userId===CURRENT_USER_ID;
   }).length;
+  const myturnBadge = document.getElementById('myturn-badge');
+  if(myturnBadge){ myturnBadge.style.display = myTurn ? 'inline' : 'none'; myturnBadge.textContent = myTurn; }
   const mineBadge = document.getElementById('mine-badge');
   mineBadge.style.display = myTurn ? 'inline' : 'none';
   mineBadge.textContent = myTurn;
@@ -993,6 +1000,12 @@ function getFilteredRequests(){
   // Filtro de ámbito
   if(currentScope==='mine')
     src = src.filter(r=>r.approvers.some(a=>a.userId===CURRENT_USER_ID));
+  else if(currentScope==='myturn')
+    src = src.filter(r=>{
+      if(getRequestStatus(r)!=='pending') return false;
+      const idx=getCurrentApproverIdx(r);
+      return idx!==-1 && r.approvers[idx].userId===CURRENT_USER_ID;
+    });
   // Filtro de estado
   if(currentFilter!=='all')
     src = src.filter(r=>getRequestStatus(r)===currentFilter);
@@ -1079,7 +1092,15 @@ function showView(view){
   document.getElementById('view-users').style.display      = 'none';
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
 
-  if(view==='dashboard'||view==='history'){
+  if(view==='myturn'){
+    currentScope='myturn'; resetFilterTabs();
+    document.getElementById('view-dashboard').style.display = 'block';
+    document.getElementById('nav-myturn').classList.add('active');
+    document.getElementById('topbar-title').innerHTML = 'Mi Turno';
+    document.getElementById('section-title-text').textContent = 'Esperando mi aprobación';
+    document.getElementById('topbar-actions').innerHTML = '';
+    updateStats(); renderTable();
+  } else if(view==='dashboard'||view==='history'){
     currentScope='all'; resetFilterTabs();
     document.getElementById('view-dashboard').style.display = 'block';
     document.getElementById('nav-dashboard').classList.add('active');
@@ -1188,13 +1209,57 @@ function confirmAction(){
   if(!currentAction) return;
   const {reqId,type,approverIdx}=currentAction;
   const req=requests.find(r=>r.id===reqId);
+  const actorUser = getUser(CURRENT_USER_ID);
   req.approvers[approverIdx].status  = type==='approve'?'approved':'rejected';
   req.approvers[approverIdx].comment = document.getElementById('action-comment').value.trim();
   req.approvers[approverIdx].date    = new Date().toISOString().slice(0,10);
   saveData();
   closeModal('modal-action');
   showToast(type==='approve'?'Solicitud aprobada correctamente.':'Solicitud rechazada.',type==='approve'?'success':'error');
+
+  // Notificar al siguiente aprobador si la acción fue una aprobación
+  if(type==='approve' && getRequestStatus(req)==='pending'){
+    const nextIdx = getCurrentApproverIdx(req);
+    if(nextIdx !== -1){
+      const nextUser = getUser(req.approvers[nextIdx].userId);
+      if(nextUser && nextUser.email && nextUser.status==='active'){
+        notifyNextApprover(nextUser, actorUser, req);
+      }
+    }
+  }
+
   openDetail(reqId); updateStats(); currentAction=null;
+}
+
+// ── NOTIFICACIÓN POR CORREO ───────────────────────────────
+async function notifyNextApprover(nextUser, fromUser, req){
+  const appUrl = window.location.origin + window.location.pathname;
+  try {
+    const res = await fetch(
+      'https://zwgyyfjvonbblgkwmphn.supabase.co/functions/v1/notify-approver',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:             nextUser.email,
+          toName:         nextUser.name.split(' ')[0],
+          fromName:       fromUser ? fromUser.name : 'Un aprobador',
+          requestCode:    req.code   || '',
+          requestSubject: req.subject,
+          requestDesc:    req.description || '',
+          appUrl,
+        }),
+      }
+    );
+    const data = await res.json();
+    if(data.ok){
+      showToast('Correo enviado a ' + nextUser.name + '.', 'success');
+    } else if(data.reason === 'email_not_configured'){
+      console.info('Email no configurado en Supabase. Agrega RESEND_API_KEY en Edge Functions → Secrets.');
+    }
+  } catch(e){
+    console.warn('No se pudo enviar la notificación por correo:', e);
+  }
 }
 
 // ── NEW REQUEST ───────────────────────────────────────────
