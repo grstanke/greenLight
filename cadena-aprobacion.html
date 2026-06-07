@@ -1152,7 +1152,7 @@ function openDetail(id){
   }).join('');
 
   const sb=document.getElementById('action-sidebar');
-  const CUID=1;
+  const CUID=CURRENT_USER_ID;
   const mi=req.approvers.findIndex(a=>a.userId===CUID);
   const canAct=mi!==-1&&mi===currentIdx&&status==='pending'&&req.approvers[mi].status==='pending';
   if(canAct){
