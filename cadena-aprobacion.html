@@ -423,6 +423,10 @@
       </div>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(250,250,248,.3)" stroke-width="2" style="margin-left:auto;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
+    <button onclick="logout()" style="margin:0 12px 12px;width:calc(100% - 24px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:7px;font-family:var(--font-body);font-size:11px;font-weight:500;color:rgba(250,250,248,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:var(--transition)" onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='rgba(250,250,248,.8)'" onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='rgba(250,250,248,.5)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Cerrar sesión
+    </button>
   </nav>
 
   <!-- MAIN -->
@@ -747,6 +751,35 @@
   </div>
 </div>
 
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="display:none;position:fixed;inset:0;background:var(--navy);align-items:center;justify-content:center;z-index:8000;flex-direction:column">
+  <div style="background:var(--white);border-radius:12px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);overflow:hidden">
+    <div style="background:var(--navy);padding:28px 32px 24px;text-align:center;border-bottom:2px solid var(--gold)">
+      <div style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--white);letter-spacing:.04em">Territoria</div>
+      <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-top:3px">Gestión de Aprobaciones</div>
+    </div>
+    <div style="padding:28px 32px 24px">
+      <div style="font-family:var(--font-display);font-size:17px;font-weight:600;color:var(--navy);margin-bottom:20px">Iniciar sesión</div>
+      <div class="form-grid">
+        <div class="field">
+          <label class="label">Correo electrónico</label>
+          <input class="input" id="login-email" type="email" placeholder="usuario@territoria.cl" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"/>
+        </div>
+        <div class="field">
+          <label class="label">Contraseña</label>
+          <input class="input" id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+        </div>
+        <div id="login-error" style="display:none;background:var(--red-bg);border:1px solid rgba(168,50,50,.2);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--red);line-height:1.5"></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;font-size:14px" onclick="doLogin()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Ingresar
+        </button>
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--gray-500);margin-top:18px;line-height:1.6">¿No tienes acceso?<br>Solicita una invitación a tu administrador.</p>
+    </div>
+  </div>
+</div>
+
 <!-- LOADING OVERLAY -->
 <div id="loading-overlay">
   <div style="font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--white);letter-spacing:.04em">Territoria</div>
@@ -879,13 +912,47 @@ function showLoading(on) {
 
 // ── VARIABLES DE ESTADO ───────────────────────────────────
 let USERS, requests, nextUserId, nextId;
-let currentFilter = 'all'; // estado: all | pending | approved | rejected
-let currentScope  = 'all'; // ámbito: all | mine
-let currentSort   = { field: null, dir: 'asc' }; // ordenamiento activo
+let CURRENT_USER_ID   = null;
+let currentFilter = 'all';
+let currentScope  = 'all';
+let currentSort   = { field: null, dir: 'asc' };
 let currentAction = null;
 let selectedApprovers = [];
 let editingUserId = null;
 let invitingUserId = null;
+
+// ── SESIÓN ────────────────────────────────────────────────
+function getSession(){ try{ const s=sessionStorage.getItem('terr_session'); return s?JSON.parse(s):null; }catch(e){return null;} }
+function setSession(userId){ CURRENT_USER_ID=userId; try{ sessionStorage.setItem('terr_session',JSON.stringify({userId})); }catch(e){} }
+function clearSession(){ CURRENT_USER_ID=null; try{ sessionStorage.removeItem('terr_session'); }catch(e){} }
+function isAdmin(){ const u=getUser(CURRENT_USER_ID); return u&&u.perm==='admin'; }
+function showLoginScreen(on){ const el=document.getElementById('login-screen'); el.style.display=on?'flex':'none'; }
+
+function doLogin(){
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
+  const pass =document.getElementById('login-pass').value;
+  const errEl=document.getElementById('login-error');
+  errEl.style.display='none';
+  if(!email||!pass){ errEl.textContent='Ingresa tu correo y contraseña.'; errEl.style.display='block'; return; }
+  const u=USERS.find(u=>u.email.toLowerCase()===email);
+  if(!u){ errEl.textContent='Correo no registrado en el sistema.'; errEl.style.display='block'; return; }
+  if(u.status==='invited'){ errEl.textContent='Tu cuenta aún no ha sido activada. Revisa tu correo de invitación.'; errEl.style.display='block'; return; }
+  if(u.status!=='active'){ errEl.textContent='Tu cuenta está inactiva. Contacta al administrador.'; errEl.style.display='block'; return; }
+  if(!u.password||u.password!==pass){ errEl.textContent='Contraseña incorrecta.'; errEl.style.display='block'; return; }
+  setSession(u.id);
+  showLoginScreen(false);
+  renderSidebarUser();
+  updateStats();
+  renderTable();
+}
+
+function logout(){
+  clearSession();
+  document.getElementById('login-email').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').style.display='none';
+  showLoginScreen(true);
+}
 
 // ── HELPERS ───────────────────────────────────────────────
 function getUser(id)   { return USERS.find(u => u.id === id); }
@@ -1033,7 +1100,9 @@ function showView(view){
     document.getElementById('view-users').style.display = 'block';
     document.getElementById('nav-users').classList.add('active');
     document.getElementById('topbar-title').innerHTML = 'Usuarios';
-    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="openAddUserModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar Usuario</button>`;
+    document.getElementById('topbar-actions').innerHTML = isAdmin()
+      ? `<button class="btn btn-primary" onclick="openAddUserModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar Usuario</button>`
+      : '';
     renderUsersView();
   } else if(view==='detail'){
     document.getElementById('view-detail').style.display = 'block';
@@ -1184,12 +1253,19 @@ function renderUsersView(){
   if(!filtered.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No se encontraron usuarios</p></div>`;return;}
 
   const permLabel={admin:'Administrador',approver:'Aprobador',viewer:'Observador'};
+  const admin = isAdmin();
   grid.innerHTML=filtered.map((u,i)=>{
     const st=u.status==='active'?'active':u.status==='invited'?'invited':'inactive';
     const stLabel=st==='active'?'Activo':st==='invited'?'Invitado':'Inactivo';
-    const invBtn = u.status!=='active'
-      ? `<button class="btn btn-blue btn-sm" onclick="openInviteModal(${u.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>${u.status==='invited'?'Reenviar':'Invitar'}</button>`
-      : `<button class="btn btn-outline btn-sm" onclick="openInviteModal(${u.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Correo</button>`;
+    // Acciones solo visibles para el administrador
+    const editBtn = admin
+      ? `<button class="btn btn-ghost btn-sm" onclick="openEditUserModal(${u.id})" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`
+      : '';
+    const invBtn = admin
+      ? (u.status!=='active'
+          ? `<button class="btn btn-blue btn-sm" onclick="openInviteModal(${u.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>${u.status==='invited'?'Reenviar':'Invitar'}</button>`
+          : `<button class="btn btn-outline btn-sm" onclick="openInviteModal(${u.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Correo</button>`)
+      : '';
     return `<div class="user-card" style="animation-delay:${i*50}ms">
       <div class="user-card-top">
         <div class="user-card-avatar av-${u.color}">
@@ -1208,8 +1284,7 @@ function renderUsersView(){
           <span style="font-size:11px;color:var(--gray-500)">${permLabel[u.perm]||'Aprobador'}</span>
         </div>
         <div class="user-card-actions">
-          <button class="btn btn-ghost btn-sm" onclick="openEditUserModal(${u.id})" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-          ${invBtn}
+          ${editBtn}${invBtn}
         </div>
       </div>
     </div>`;
@@ -1424,7 +1499,10 @@ async function activateAccount(){
   try {
     if(USE_SUPABASE){
       const rows = await sbFetch('invite_tokens?token=eq.'+activatingToken);
-      if(rows && rows.length){ const u=getUser(rows[0].user_id); if(u){ u.status='active'; } }
+      if(rows && rows.length){
+        const u=getUser(rows[0].user_id);
+        if(u){ u.status='active'; u.password=pass; } // guardar contraseña
+      }
       await Promise.all([
         sbFetch('app_state?id=eq.1', { method:'PATCH', body:JSON.stringify({users:USERS,requests,next_user_id:nextUserId,next_id:nextId}) }),
         sbFetch('invite_tokens?token=eq.'+activatingToken, { method:'DELETE' }),
@@ -1432,10 +1510,11 @@ async function activateAccount(){
     } else {
       const tokens = JSON.parse(localStorage.getItem('terr_tokens')||'{}');
       const entry  = tokens[activatingToken];
-      if(entry){ const u=getUser(entry.userId); if(u){ u.status='active'; saveData(); } delete tokens[activatingToken]; localStorage.setItem('terr_tokens',JSON.stringify(tokens)); }
+      if(entry){ const u=getUser(entry.userId); if(u){ u.status='active'; u.password=pass; saveData(); } delete tokens[activatingToken]; localStorage.setItem('terr_tokens',JSON.stringify(tokens)); }
     }
     closeModal('modal-activate');
-    showToast('¡Cuenta activada correctamente! Bienvenido al sistema.','success');
+    showToast('¡Cuenta activada! Ya puedes iniciar sesión con tu correo y contraseña.','success');
+    showLoginScreen(true); // llevar al login después de activar
     if(document.getElementById('view-users').style.display!=='none') renderUsersView();
     updateStats(); activatingToken=null;
   } catch(e) {
@@ -1458,18 +1537,6 @@ function showToast(msg,type=''){
   setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(20px)';t.style.transition='.3s ease';setTimeout(()=>t.remove(),300);},3200);
 }
 
-// ── SIDEBAR USER ──────────────────────────────────────────
-const CURRENT_USER_ID = 1;
-function renderSidebarUser(){
-  const u = getUser(CURRENT_USER_ID);
-  if(!u) return;
-  const av = document.getElementById('sidebar-avatar');
-  // limpiar clases de color previas y aplicar la correcta
-  av.className = 'user-avatar av-' + u.color;
-  av.textContent = u.initials;
-  document.getElementById('sidebar-name').textContent = u.name;
-  document.getElementById('sidebar-role').textContent = u.role || 'Usuario';
-}
 function goToMyProfile(){
   showView('users');
   // breve delay para que el grid renderice, luego resalta la tarjeta
@@ -1488,17 +1555,52 @@ function goToMyProfile(){
   }, 120);
 }
 
+// ── SIDEBAR USER ──────────────────────────────────────────
+const CURRENT_USER_ID_PLACEHOLDER = 1; // fallback solo si no hay sesión
+function renderSidebarUser(){
+  const u = getUser(CURRENT_USER_ID);
+  if(!u) return;
+  const av = document.getElementById('sidebar-avatar');
+  av.className = 'user-avatar av-' + u.color;
+  av.textContent = u.initials;
+  document.getElementById('sidebar-name').textContent = u.name;
+  document.getElementById('sidebar-role').textContent = u.role || 'Usuario';
+}
+
 // ── INIT ──────────────────────────────────────────────────
 (async () => {
+  // Si hay link de invitación en la URL, procesar primero (no requiere login)
+  const hasInvite = window.location.hash.startsWith('#invite=');
+
   showLoading(true);
   document.getElementById('loading-msg').textContent =
     USE_SUPABASE ? 'Conectando con Supabase…' : 'Cargando datos locales…';
   await loadData();
   showLoading(false);
-  updateStats();
-  renderTable();
-  renderSidebarUser();
-  await checkInviteHash();
+
+  if(hasInvite){
+    // Activación de cuenta: mostrar modal sin requerir login
+    await checkInviteHash();
+    return;
+  }
+
+  // Verificar sesión activa
+  const session = getSession();
+  if(session){
+    const u = getUser(session.userId);
+    if(u && u.status === 'active'){
+      CURRENT_USER_ID = session.userId;
+      updateStats();
+      renderTable();
+      renderSidebarUser();
+      return;
+    }
+    // Sesión inválida (usuario eliminado o inactivo)
+    clearSession();
+  }
+
+  // Sin sesión válida → mostrar pantalla de login
+  showLoginScreen(true);
 })();
 </script>
 </body>
