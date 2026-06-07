@@ -603,6 +603,47 @@
   </div>
 </div>
 
+<!-- MODAL: Reasignar Aprobaciones Pendientes -->
+<div class="overlay" id="modal-reassign">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-header-icon" style="background:linear-gradient(135deg,var(--amber),#8B6A26)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#fff"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      </div>
+      <div>
+        <div class="modal-title">Reasignar aprobaciones pendientes</div>
+        <div class="modal-subtitle" id="reassign-subtitle">Este usuario tiene aprobaciones sin completar</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-reassign')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <!-- Solicitudes afectadas -->
+      <div style="margin-bottom:18px">
+        <div class="label" style="margin-bottom:8px">Solicitudes afectadas</div>
+        <div id="reassign-requests-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+      <!-- Selector nuevo aprobador -->
+      <div class="field">
+        <label class="label">Reasignar a <span class="required">*</span></label>
+        <div class="approver-panel">
+          <div class="approver-panel-header">
+            <span>Selecciona el nuevo aprobador</span>
+          </div>
+          <div class="user-list" id="reassign-user-list"></div>
+        </div>
+      </div>
+      <div id="reassign-error" style="display:none;background:var(--red-bg);border:1px solid rgba(168,50,50,.2);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--red);margin-top:12px"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reassign')" style="color:var(--gray-500)">Mantener como está</button>
+      <button class="btn btn-gold" onclick="confirmReassign()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/></svg>
+        Reasignar aprobaciones
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Agregar / Editar Usuario -->
 <div class="overlay" id="modal-user">
   <div class="modal">
@@ -1397,18 +1438,100 @@ function saveUser(){
     const u=getUser(editingUserId);
     u.name=fullName; u.email=email; u.role=role; u.dept=dept; u.phone=phone; u.perm=perm; u.initials=initials;
     saveData();
-    closeModal('modal-user'); showToast('Usuario actualizado correctamente.','success');
+    closeModal('modal-user');
+    showToast('Usuario actualizado correctamente.','success');
+    // Verificar si tiene aprobaciones pendientes para reasignar
+    checkPendingApprovalsForReassign(editingUserId);
   } else {
     const colorIdx=nextUserId%10;
     USERS.push({id:nextUserId++,name:fullName,role,email,initials,color:colorIdx,status:'invited',dept,phone,perm});
     saveData();
     closeModal('modal-user');
     showToast('Usuario agregado. Ahora puedes enviarle la invitación.','success');
-    // auto-open invite
     setTimeout(()=>openInviteModal(nextUserId-1),400);
   }
   renderUsersView(); updateStats();
-  renderSidebarUser(); // refrescar sidebar si se editó el usuario actual
+  renderSidebarUser();
+}
+
+// ── REASIGNACIÓN DE APROBACIONES ──────────────────────────
+let reassignFromUserId = null;
+let reassignToUserId   = null;
+
+function checkPendingApprovalsForReassign(userId){
+  const affected = requests.filter(r =>
+    getRequestStatus(r) === 'pending' &&
+    r.approvers.some(a => a.userId === userId && a.status === 'pending')
+  );
+  if(!affected.length) return; // sin pendientes, nada que hacer
+  openReassignModal(userId, affected);
+}
+
+function openReassignModal(fromUserId, affected){
+  reassignFromUserId = fromUserId;
+  reassignToUserId   = null;
+  const fromUser = getUser(fromUserId);
+
+  document.getElementById('reassign-subtitle').textContent =
+    `${fromUser.name} tiene ${affected.length} aprobación${affected.length>1?'es':''} pendiente${affected.length>1?'s':''}`;
+
+  // Listar solicitudes afectadas
+  document.getElementById('reassign-requests-list').innerHTML = affected.map(r=>`
+    <div style="display:flex;align-items:center;gap:10px;background:var(--amber-bg);border:1px solid rgba(176,112,32,.2);border-radius:var(--radius);padding:10px 14px">
+      <span style="font-size:10px;font-weight:700;color:var(--gold-dim);background:rgba(196,151,59,.15);border-radius:4px;padding:2px 7px;flex-shrink:0">${r.code}</span>
+      <span style="font-size:13px;font-weight:500;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.subject}</span>
+    </div>
+  `).join('');
+
+  // Lista de usuarios disponibles (excluir al usuario editado)
+  document.getElementById('reassign-user-list').innerHTML = USERS
+    .filter(u => u.id !== fromUserId && u.status === 'active')
+    .map(u => `
+      <div class="user-item" id="reassign-opt-${u.id}" onclick="selectReassignUser(${u.id})">
+        <div class="user-item-avatar av-${u.color}">${u.initials}</div>
+        <div class="user-item-info">
+          <div class="user-item-name">${u.name}</div>
+          <div class="user-item-role">${u.role}</div>
+        </div>
+        <div class="user-item-check"></div>
+      </div>
+    `).join('');
+
+  document.getElementById('reassign-error').style.display='none';
+  document.getElementById('modal-reassign').classList.add('open');
+}
+
+function selectReassignUser(userId){
+  reassignToUserId = userId;
+  document.querySelectorAll('#reassign-user-list .user-item').forEach(el=>{
+    const id = parseInt(el.id.replace('reassign-opt-',''));
+    el.classList.toggle('selected', id === userId);
+  });
+  document.getElementById('reassign-error').style.display='none';
+}
+
+function confirmReassign(){
+  if(!reassignToUserId){
+    const e=document.getElementById('reassign-error');
+    e.textContent='Selecciona un usuario para reasignar las aprobaciones.';
+    e.style.display='block';
+    return;
+  }
+  // Reemplazar userId en todos los pasos pendientes del usuario editado
+  requests.forEach(r => {
+    r.approvers.forEach(a => {
+      if(a.userId === reassignFromUserId && a.status === 'pending'){
+        a.userId = reassignToUserId;
+      }
+    });
+  });
+  saveData();
+  closeModal('modal-reassign');
+  const toUser = getUser(reassignToUserId);
+  showToast(`Aprobaciones reasignadas a ${toUser.name}.`, 'success');
+  renderTable(); updateStats();
+  reassignFromUserId = null;
+  reassignToUserId   = null;
 }
 
 // ── INVITE ────────────────────────────────────────────────
