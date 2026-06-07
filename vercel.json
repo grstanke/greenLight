@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/cadena-aprobacion.html" },
+    { "source": "/((?!cadena-aprobacion).*)", "destination": "/cadena-aprobacion.html" }
+  ]
+}

@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadena de Aprobación — Territoria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:       #0B1D35;
+    --navy-mid:   #162D4F;
+    --navy-light: #1E3D68;
+    --gold:       #C4973B;
+    --gold-light: #E0B85C;
+    --gold-dim:   #8B6A26;
+    --white:      #FAFAF8;
+    --cream:      #F2EDE4;
+    --gray-100:   #EEE9DF;
+    --gray-300:   #BDB8AF;
+    --gray-500:   #7A7570;
+    --green:      #2A7A5E;
+    --green-bg:   #EAF5F0;
+    --red:        #A83232;
+    --red-bg:     #FAF0F0;
+    --amber:      #B07020;
+    --amber-bg:   #FDF4E3;
+    --blue:       #1A5A8A;
+    --blue-bg:    #E8F2FA;
+    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-body:    'DM Sans', sans-serif;
+    --radius:     6px;
+    --shadow-sm:  0 1px 4px rgba(11,29,53,.10);
+    --shadow-md:  0 4px 20px rgba(11,29,53,.15);
+    --shadow-lg:  0 12px 48px rgba(11,29,53,.22);
+    --transition: 200ms cubic-bezier(.4,0,.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { height: 100%; }
+  body { height: 100%; font-family: var(--font-body); background: var(--cream); color: var(--navy); font-size: 14px; line-height: 1.5; overflow-x: hidden; }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--navy); display: flex; flex-direction: column; position: relative; z-index: 10; }
+  .sidebar::after { content:''; position:absolute; top:0; right:0; width:1px; height:100%; background:linear-gradient(180deg, var(--gold-dim) 0%, transparent 60%); }
+  .sidebar-logo { padding: 28px 24px 22px; border-bottom: 1px solid rgba(196,151,59,.2); }
+  .sidebar-logo .wordmark { font-family:var(--font-display); font-size:22px; font-weight:600; letter-spacing:.04em; color:var(--white); }
+  .sidebar-logo .sub { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); margin-top:2px; font-weight:500; }
+  .sidebar-nav { flex:1; padding:20px 0; overflow-y:auto; }
+  .nav-section-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:rgba(196,151,59,.6); padding:0 24px 8px; font-weight:600; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 24px; color:rgba(250,250,248,.65); font-size:13px; font-weight:400; cursor:pointer; transition:var(--transition); border-left:2px solid transparent; }
+  .nav-item:hover { color:var(--white); background:rgba(255,255,255,.05); }
+  .nav-item.active { color:var(--gold-light); background:rgba(196,151,59,.1); border-left-color:var(--gold); }
+  .nav-item .nav-icon { width:16px; height:16px; opacity:.7; flex-shrink:0; }
+  .nav-item.active .nav-icon { opacity:1; }
+  .nav-badge { margin-left:auto; background:var(--gold); color:var(--navy); font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px; min-width:20px; text-align:center; }
+  .sidebar-user { padding:16px 20px; border-top:1px solid rgba(196,151,59,.15); display:flex; align-items:center; gap:10px; cursor:pointer; transition:var(--transition); }
+  .sidebar-user:hover { background:rgba(255,255,255,.06); }
+  .sidebar-user:hover .user-name { color:var(--gold-light); }
+  .user-avatar { width:32px; height:32px; border-radius:50%; background:var(--gold-dim); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:var(--white); flex-shrink:0; }
+  .user-info .user-name { font-size:12px; font-weight:500; color:var(--white); transition:var(--transition); }
+  .user-info .user-role { font-size:10px; color:var(--gray-300); }
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .topbar { height:60px; background:var(--white); border-bottom:1px solid var(--gray-100); display:flex; align-items:center; padding:0 32px; gap:16px; flex-shrink:0; }
+  .topbar-title { font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--navy); flex:1; }
+  .topbar-title span { font-weight:400; color:var(--gray-500); font-size:16px; margin-left:8px; }
+  .content { flex:1; overflow-y:auto; padding:28px 32px; }
+
+  /* ── BUTTONS ── */
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:var(--radius); font-family:var(--font-body); font-size:13px; font-weight:500; cursor:pointer; border:none; transition:var(--transition); text-decoration:none; white-space:nowrap; }
+  .btn-primary { background:var(--navy); color:var(--white); }
+  .btn-primary:hover { background:var(--navy-mid); }
+  .btn-gold { background:var(--gold); color:var(--navy); }
+  .btn-gold:hover { background:var(--gold-light); }
+  .btn-outline { background:transparent; color:var(--navy); border:1px solid var(--gray-300); }
+  .btn-outline:hover { border-color:var(--navy); background:var(--gray-100); }
+  .btn-ghost { background:transparent; color:var(--gray-500); border:none; }
+  .btn-ghost:hover { color:var(--navy); background:var(--gray-100); }
+  .btn-approve { background:var(--green); color:#fff; }
+  .btn-approve:hover { background:#1f5e47; }
+  .btn-reject { background:var(--red); color:#fff; }
+  .btn-reject:hover { background:#8a2828; }
+  .btn-blue { background:var(--blue); color:#fff; }
+  .btn-blue:hover { background:#154873; }
+  .btn-sm { padding:5px 11px; font-size:12px; }
+  .btn svg { width:15px; height:15px; flex-shrink:0; }
+
+  /* ── STATS ── */
+  .stats-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+  .stat-card { background:var(--white); border:1px solid var(--gray-100); border-radius:var(--radius); padding:16px 20px; position:relative; overflow:hidden; }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; }
+  .stat-card.total::before   { background:var(--navy); }
+  .stat-card.pending::before { background:var(--amber); }
+  .stat-card.approved::before{ background:var(--green); }
+  .stat-card.rejected::before{ background:var(--red); }
+  .stat-label { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--gray-500); font-weight:600; }
+  .stat-value { font-family:var(--font-display); font-size:32px; font-weight:700; color:var(--navy); line-height:1; margin-top:4px; }
+  .stat-card.pending .stat-value  { color:var(--amber); }
+  .stat-card.approved .stat-value { color:var(--green); }
+  .stat-card.rejected .stat-value { color:var(--red); }
+
+  /* ── TABLE ── */
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .section-title { font-family:var(--font-display); font-size:18px; font-weight:600; color:var(--navy); }
+  .filter-tabs { display:flex; gap:2px; background:var(--gray-100); border-radius:var(--radius); padding:3px; }
+  .filter-tab { padding:5px 14px; border-radius:4px; font-size:12px; font-weight:500; cursor:pointer; color:var(--gray-500); transition:var(--transition); border:none; background:transparent; font-family:var(--font-body); }
+  .filter-tab.active { background:var(--white); color:var(--navy); box-shadow:var(--shadow-sm); }
+  .requests-table { background:var(--white); border:1px solid var(--gray-100); border-radius:var(--radius); overflow:hidden; }
+  .table-header { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 100px; padding:11px 20px; background:var(--cream); border-bottom:1px solid var(--gray-100); }
+  .th { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:var(--gray-500); }
+  .th-sort { display:inline-flex; align-items:center; gap:5px; cursor:pointer; user-select:none; transition:var(--transition); border-radius:3px; padding:2px 4px; margin:-2px -4px; }
+  .th-sort:hover { color:var(--navy); background:rgba(11,29,53,.06); }
+  .th-sort.active { color:var(--navy); }
+  .th-sort .sort-icon { display:flex; flex-direction:column; gap:1px; opacity:.3; transition:var(--transition); }
+  .th-sort:hover .sort-icon, .th-sort.active .sort-icon { opacity:1; }
+  .sort-icon svg { display:block; }
+  .th-sort.asc  .sort-asc  { opacity:1; color:var(--gold); }
+  .th-sort.asc  .sort-desc { opacity:.25; }
+  .th-sort.desc .sort-desc { opacity:1; color:var(--gold); }
+  .th-sort.desc .sort-asc  { opacity:.25; }
+  .table-row { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 100px; padding:14px 20px; border-bottom:1px solid var(--gray-100); align-items:center; cursor:pointer; transition:var(--transition); animation:fadeRow .3s ease both; }
+  .table-row:last-child { border-bottom:none; }
+  .table-row:hover { background:rgba(196,151,59,.04); }
+  @keyframes fadeRow { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+  .row-subject { font-weight:500; color:var(--navy); }
+  .row-desc { font-size:12px; font-weight:400; color:var(--gray-500); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:280px; }
+  .row-approvers { display:flex; align-items:center; }
+  .mini-avatar { width:24px; height:24px; border-radius:50%; border:2px solid var(--white); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:var(--white); margin-left:-6px; flex-shrink:0; }
+  .mini-avatar:first-child { margin-left:0; }
+  .mini-avatar.more { background:var(--gray-300); color:var(--navy); font-size:8px; }
+  .row-date { font-size:12px; color:var(--gray-500); }
+  .row-deadline { font-size:12px; color:var(--gray-500); }
+  .row-deadline.urgent { color:var(--red); font-weight:600; }
+  .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:100px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; }
+  .badge::before { content:''; width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+  .badge-pending  { background:var(--amber-bg); color:var(--amber); }
+  .badge-pending::before  { background:var(--amber); }
+  .badge-approved { background:var(--green-bg); color:var(--green); }
+  .badge-approved::before { background:var(--green); }
+  .badge-rejected { background:var(--red-bg); color:var(--red); }
+  .badge-rejected::before { background:var(--red); }
+  .badge-draft    { background:var(--gray-100); color:var(--gray-500); }
+  .badge-draft::before { background:var(--gray-300); }
+  .badge-invited  { background:var(--blue-bg); color:var(--blue); }
+  .badge-invited::before { background:var(--blue); }
+  .badge-active   { background:var(--green-bg); color:var(--green); }
+  .badge-active::before { background:var(--green); }
+  .empty-state { display:flex; flex-direction:column; align-items:center; padding:64px 32px; color:var(--gray-500); gap:12px; }
+  .empty-state svg { width:40px; height:40px; opacity:.3; }
+  .empty-state p { font-size:14px; }
+
+  /* ── MODALS ── */
+  .overlay { position:fixed; inset:0; background:rgba(11,29,53,.55); backdrop-filter:blur(4px); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; animation:fadeIn .2s ease; }
+  .overlay.open { display:flex; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .modal { background:var(--white); border-radius:10px; box-shadow:var(--shadow-lg); width:100%; max-width:640px; max-height:90vh; overflow-y:auto; animation:slideUp .25s cubic-bezier(.4,0,.2,1); }
+  .modal-lg { max-width:780px; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .modal-header { padding:24px 28px 18px; border-bottom:1px solid var(--gray-100); display:flex; align-items:flex-start; gap:16px; }
+  .modal-header-icon { width:40px; height:40px; border-radius:8px; background:linear-gradient(135deg,var(--navy-mid),var(--navy-light)); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .modal-header-icon svg { width:20px; height:20px; color:var(--gold); }
+  .modal-title { font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--navy); }
+  .modal-subtitle { font-size:13px; color:var(--gray-500); margin-top:2px; }
+  .modal-close { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--gray-300); padding:4px; border-radius:4px; transition:var(--transition); display:flex; }
+  .modal-close:hover { color:var(--navy); background:var(--gray-100); }
+  .modal-body { padding:24px 28px; }
+  .modal-footer { padding:16px 28px; border-top:1px solid var(--gray-100); display:flex; align-items:center; justify-content:flex-end; gap:10px; }
+
+  /* ── FORMS ── */
+  .form-grid { display:grid; gap:18px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .label { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gray-500); }
+  .label .required { color:var(--gold); margin-left:2px; }
+  .input, .textarea, .select { width:100%; padding:9px 12px; border:1px solid var(--gray-300); border-radius:var(--radius); font-family:var(--font-body); font-size:14px; color:var(--navy); background:var(--white); transition:var(--transition); outline:none; }
+  .input:focus, .textarea:focus, .select:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(11,29,53,.08); }
+  .textarea { resize:vertical; min-height:80px; }
+  .select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A7570' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+
+  /* ── APPROVER SELECTOR ── */
+  .approver-panel { border:1px solid var(--gray-300); border-radius:var(--radius); overflow:hidden; }
+  .approver-panel-header { padding:10px 14px; background:var(--cream); border-bottom:1px solid var(--gray-100); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gray-500); display:flex; justify-content:space-between; align-items:center; }
+  .user-list { display:flex; flex-direction:column; max-height:200px; overflow-y:auto; }
+  .user-item { display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:1px solid var(--gray-100); cursor:pointer; transition:var(--transition); }
+  .user-item:last-child { border-bottom:none; }
+  .user-item:hover { background:var(--cream); }
+  .user-item.selected { background:rgba(11,29,53,.04); }
+  .user-item-avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--white); flex-shrink:0; }
+  .user-item-info { flex:1; }
+  .user-item-name { font-size:13px; font-weight:500; color:var(--navy); }
+  .user-item-role { font-size:11px; color:var(--gray-500); }
+  .user-item-check { width:18px; height:18px; border-radius:50%; border:2px solid var(--gray-300); display:flex; align-items:center; justify-content:center; transition:var(--transition); flex-shrink:0; }
+  .user-item.selected .user-item-check { background:var(--navy); border-color:var(--navy); }
+  .user-item.selected .user-item-check::after { content:''; width:8px; height:6px; border-left:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(-45deg) translate(1px,-1px); }
+  .chain-preview { display:flex; flex-direction:column; gap:6px; }
+  .chain-step { display:flex; align-items:center; gap:10px; background:var(--white); border:1px solid var(--gray-100); border-radius:var(--radius); padding:8px 12px; animation:fadeRow .25s ease both; }
+  .chain-step-num { width:22px; height:22px; border-radius:50%; background:var(--navy); color:var(--white); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .chain-step-name { flex:1; font-size:13px; font-weight:500; }
+  .chain-step-remove { background:none; border:none; cursor:pointer; color:var(--gray-300); display:flex; padding:2px; border-radius:3px; transition:var(--transition); }
+  .chain-step-remove:hover { color:var(--red); background:var(--red-bg); }
+
+  /* ── DETAIL VIEW ── */
+  .detail-panel { display:none; }
+  .detail-panel.open { display:block; animation:fadeIn .25s ease; }
+  .detail-topbar { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+  .detail-back { background:var(--white); border:1px solid var(--gray-100); border-radius:var(--radius); padding:7px 12px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500; color:var(--gray-500); cursor:pointer; transition:var(--transition); }
+  .detail-back:hover { color:var(--navy); border-color:var(--navy); }
+  .detail-back svg { width:14px; height:14px; }
+  .detail-grid { display:grid; grid-template-columns:1fr 340px; gap:20px; align-items:start; }
+  .detail-card { background:var(--white); border:1px solid var(--gray-100); border-radius:8px; overflow:hidden; }
+  .detail-card-header { padding:16px 22px; border-bottom:1px solid var(--gray-100); display:flex; align-items:center; justify-content:space-between; }
+  .detail-card-title { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--gray-500); }
+  .detail-card-body { padding:22px; }
+  .approval-chain { display:flex; flex-direction:column; }
+  .chain-node { display:flex; align-items:flex-start; gap:16px; position:relative; }
+  .chain-node::before { content:''; position:absolute; left:19px; top:40px; bottom:-24px; width:2px; background:var(--gray-100); }
+  .chain-node:last-child::before { display:none; }
+  .chain-node + .chain-node { margin-top:24px; }
+  .node-icon { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:2px solid transparent; font-size:13px; font-weight:700; color:var(--white); position:relative; z-index:1; }
+  .node-icon.pending  { background:var(--white); border-color:var(--gray-300); color:var(--gray-500); }
+  .node-icon.approved { background:var(--green); border-color:var(--green); }
+  .node-icon.rejected { background:var(--red); border-color:var(--red); }
+  .node-icon.waiting  { background:var(--amber-bg); border-color:var(--amber); color:var(--amber); }
+  .node-content { flex:1; padding-bottom:4px; }
+  .node-name { font-weight:600; font-size:14px; color:var(--navy); }
+  .node-role { font-size:11px; color:var(--gray-500); margin-bottom:4px; }
+  .node-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .node-comment { margin-top:8px; background:var(--cream); border-left:3px solid var(--gray-300); padding:8px 12px; border-radius:0 4px 4px 0; font-size:12px; color:var(--gray-500); font-style:italic; }
+  .node-comment.approved-comment { border-color:var(--green); color:var(--green); background:var(--green-bg); }
+  .node-comment.rejected-comment { border-color:var(--red); color:var(--red); background:var(--red-bg); }
+  .action-panel { background:var(--white); border:1px solid var(--gray-100); border-radius:8px; overflow:hidden; position:sticky; top:0; }
+  .action-header { padding:16px 22px; background:var(--navy); display:flex; align-items:center; gap:10px; }
+  .action-header .action-title { font-family:var(--font-display); font-size:16px; color:var(--white); font-weight:600; }
+  .action-header .gold-dot { width:8px; height:8px; border-radius:50%; background:var(--gold); }
+  .action-body { padding:20px; }
+  .action-desc { font-size:13px; color:var(--gray-500); margin-bottom:16px; line-height:1.6; }
+  .action-comment { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+  .action-comment label { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gray-500); }
+  .action-buttons { display:flex; gap:8px; }
+  .action-buttons .btn { flex:1; justify-content:center; }
+  .action-locked { display:flex; flex-direction:column; align-items:center; padding:24px 20px; text-align:center; gap:8px; color:var(--gray-500); }
+  .action-locked svg { width:28px; height:28px; opacity:.3; }
+  .action-locked p { font-size:12px; }
+  .info-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+  .info-label { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--gray-500); margin-bottom:3px; }
+  .info-value { font-size:14px; font-weight:500; color:var(--navy); }
+  .progress-wrap { margin-bottom:20px; }
+  .progress-label { display:flex; justify-content:space-between; font-size:11px; color:var(--gray-500); margin-bottom:6px; }
+  .progress-bar { height:4px; background:var(--gray-100); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--gold); border-radius:2px; transition:width .4s ease; }
+
+  /* ── USERS VIEW ── */
+  .users-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+  .user-card {
+    background:var(--white);
+    border:1px solid var(--gray-100);
+    border-radius:10px;
+    overflow:hidden;
+    transition:var(--transition);
+    animation:fadeRow .3s ease both;
+  }
+  .user-card:hover { box-shadow:var(--shadow-md); transform:translateY(-1px); }
+  .user-card-top {
+    padding:20px 20px 16px;
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    border-bottom:1px solid var(--gray-100);
+  }
+  .user-card-avatar {
+    width:48px; height:48px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+    color:var(--white);
+    flex-shrink:0;
+    position:relative;
+  }
+  .user-card-avatar .status-dot {
+    position:absolute;
+    bottom:1px; right:1px;
+    width:12px; height:12px;
+    border-radius:50%;
+    border:2px solid var(--white);
+  }
+  .status-dot.active  { background:var(--green); }
+  .status-dot.invited { background:var(--amber); }
+  .status-dot.inactive{ background:var(--gray-300); }
+  .user-card-info { flex:1; min-width:0; }
+  .user-card-name { font-weight:600; font-size:15px; color:var(--navy); }
+  .user-card-role { font-size:12px; color:var(--gray-500); margin-top:2px; }
+  .user-card-email { font-size:11px; color:var(--blue); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .user-card-bottom {
+    padding:12px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    background:rgba(11,29,53,.015);
+  }
+  .user-card-actions { display:flex; gap:6px; }
+  .user-card-actions .btn { padding:5px 10px; font-size:11px; }
+
+  /* ── EMAIL PREVIEW ── */
+  .email-preview {
+    border:1px solid var(--gray-300);
+    border-radius:8px;
+    overflow:hidden;
+    margin-top:4px;
+  }
+  .email-preview-header {
+    background:var(--navy);
+    padding:12px 16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .email-preview-header svg { color:var(--gold); flex-shrink:0; }
+  .email-preview-header .ep-to { font-size:11px; color:rgba(255,255,255,.6); }
+  .email-preview-header .ep-addr { font-size:12px; color:var(--gold-light); font-weight:500; }
+  .email-preview-body {
+    padding:0;
+    background:var(--cream);
+  }
+  .email-card {
+    background:var(--white);
+    margin:16px;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:var(--shadow-sm);
+  }
+  .email-card-header {
+    background:var(--navy);
+    padding:20px 24px;
+    text-align:center;
+  }
+  .email-card-header .logo-text { font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--white); letter-spacing:.04em; }
+  .email-card-header .logo-sub  { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); margin-top:2px; }
+  .email-card-content { padding:24px; }
+  .email-card-content h3 { font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--navy); margin-bottom:10px; }
+  .email-card-content p  { font-size:13px; color:var(--gray-500); line-height:1.7; margin-bottom:12px; }
+  .email-cta {
+    display:block;
+    background:var(--gold);
+    color:var(--navy);
+    text-align:center;
+    padding:11px 24px;
+    border-radius:var(--radius);
+    font-weight:600;
+    font-size:13px;
+    margin:16px 0;
+    text-decoration:none;
+  }
+  .email-card-footer { padding:12px 24px; background:var(--cream); border-top:1px solid var(--gray-100); font-size:11px; color:var(--gray-500); text-align:center; }
+  .invite-meta { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .invite-meta-item .invite-meta-label { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gray-500); }
+  .invite-meta-item .invite-meta-value { font-size:13px; font-weight:500; color:var(--navy); margin-top:2px; }
+
+  /* ── TOAST ── */
+  .toast-container { position:fixed; bottom:28px; right:28px; z-index:500; display:flex; flex-direction:column; gap:10px; }
+  .toast { background:var(--navy); color:var(--white); padding:12px 18px; border-radius:var(--radius); font-size:13px; font-weight:500; box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:10px; animation:toastIn .3s cubic-bezier(.4,0,.2,1); border-left:3px solid var(--gold); }
+  .toast.success { border-color:var(--green); }
+  .toast.error   { border-color:var(--red); }
+  @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+
+  /* Loading overlay */
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #loading-overlay { position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s ease; }
+  #loading-overlay.hidden { opacity:0;pointer-events:none; }
+  .loading-spinner { width:34px;height:34px;border:3px solid rgba(196,151,59,.25);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;margin-bottom:20px; }
+
+  /* ── MISC ── */
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--gray-300); border-radius:10px; }
+  .av-0{background:#2A6496} .av-1{background:#5C4033} .av-2{background:#2A7A5E}
+  .av-3{background:#6B3FA0} .av-4{background:#7A4F35} .av-5{background:#1A5A8A}
+  .av-6{background:#A8522A} .av-7{background:#3A7A6A} .av-8{background:#8A3A6A}
+  .av-9{background:#4A6A2A}
+  .divider { height:1px; background:var(--gray-100); margin:4px 0; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="wordmark">Territoria</div>
+      <div class="sub">Gestión de Aprobaciones</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label" style="margin-top:8px">Principal</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showView('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Panel General
+        <span class="nav-badge" id="pending-badge">0</span>
+      </div>
+      <div class="nav-item" id="nav-mine" onclick="showView('mine')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><path d="M20 12V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2h8"/><circle cx="18" cy="18" r="3"/><path d="M21 21l-1.5-1.5"/></svg>
+        Mis Aprobaciones
+        <span class="nav-badge" id="mine-badge" style="display:none;background:var(--amber)">0</span>
+      </div>
+      <div class="nav-item" id="nav-history" onclick="showView('history')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Historial
+      </div>
+      <div class="divider" style="margin:8px 0 12px"></div>
+      <div class="nav-section-label">Administración</div>
+      <div class="nav-item" id="nav-users" onclick="showView('users')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Usuarios
+        <span class="nav-badge" id="users-badge" style="display:none">0</span>
+      </div>
+    </div>
+    <div class="sidebar-user" id="sidebar-user-block" onclick="goToMyProfile()">
+      <div class="user-avatar av-0" id="sidebar-avatar">GS</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-name">Gerardo Stanke</div>
+        <div class="user-role" id="sidebar-role">Administrador</div>
+      </div>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(250,250,248,.3)" stroke-width="2" style="margin-left:auto;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Panel General</div>
+      <div id="topbar-actions">
+        <button class="btn btn-primary" onclick="openNewModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nueva Solicitud
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD VIEW -->
+      <div id="view-dashboard">
+        <div class="stats-strip">
+          <div class="stat-card total"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">0</div></div>
+          <div class="stat-card pending"><div class="stat-label">En Proceso</div><div class="stat-value" id="stat-pending">0</div></div>
+          <div class="stat-card approved"><div class="stat-label">Aprobadas</div><div class="stat-value" id="stat-approved">0</div></div>
+          <div class="stat-card rejected"><div class="stat-label">Rechazadas</div><div class="stat-value" id="stat-rejected">0</div></div>
+        </div>
+        <div class="section-header">
+          <div class="section-title" id="section-title-text">Solicitudes de Aprobación</div>
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('all',this)">Todas</button>
+            <button class="filter-tab" onclick="setFilter('pending',this)">En proceso</button>
+            <button class="filter-tab" onclick="setFilter('approved',this)">Aprobadas</button>
+            <button class="filter-tab" onclick="setFilter('rejected',this)">Rechazadas</button>
+          </div>
+        </div>
+        <div class="requests-table">
+          <div class="table-header" id="table-header-row">
+            <div class="th" style="display:flex;align-items:center;gap:10px"><span class="th-sort" data-field="code" onclick="toggleSort('code')">Código<span class="sort-icon"><svg class="sort-asc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 0L8 5H0Z" fill="currentColor"/></svg><svg class="sort-desc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 5L0 0H8Z" fill="currentColor"/></svg></span></span><span style="color:var(--gray-300)">·</span><span class="th-sort" data-field="subject" onclick="toggleSort('subject')">Tema<span class="sort-icon"><svg class="sort-asc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 0L8 5H0Z" fill="currentColor"/></svg><svg class="sort-desc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 5L0 0H8Z" fill="currentColor"/></svg></span></span></div>
+            <div class="th">Cadena de Aprobación</div>
+            <div class="th"><span class="th-sort" data-field="createdAt" onclick="toggleSort('createdAt')">Creado<span class="sort-icon"><svg class="sort-asc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 0L8 5H0Z" fill="currentColor"/></svg><svg class="sort-desc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 5L0 0H8Z" fill="currentColor"/></svg></span></span></div>
+            <div class="th"><span class="th-sort" data-field="deadline" onclick="toggleSort('deadline')">Vence<span class="sort-icon"><svg class="sort-asc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 0L8 5H0Z" fill="currentColor"/></svg><svg class="sort-desc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 5L0 0H8Z" fill="currentColor"/></svg></span></span></div>
+            <div class="th"><span class="th-sort" data-field="status" onclick="toggleSort('status')">Estado<span class="sort-icon"><svg class="sort-asc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 0L8 5H0Z" fill="currentColor"/></svg><svg class="sort-desc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 5L0 0H8Z" fill="currentColor"/></svg></span></span></div>
+          </div>
+          <div id="requests-list"></div>
+        </div>
+      </div>
+
+      <!-- DETAIL VIEW -->
+      <div id="view-detail" class="detail-panel" style="display:none">
+        <div class="detail-topbar">
+          <button class="detail-back" onclick="showView('dashboard')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Volver al Panel
+          </button>
+          <span id="detail-status-badge"></span>
+        </div>
+        <div style="margin-bottom:20px">
+          <h2 id="detail-title" style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--navy);margin-bottom:6px"></h2>
+          <p id="detail-description" style="font-size:14px;color:var(--gray-500);line-height:1.7;max-width:640px"></p>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="detail-card" style="margin-bottom:16px">
+              <div class="detail-card-header"><div class="detail-card-title">Información de la Solicitud</div></div>
+              <div class="detail-card-body">
+                <div class="info-strip" id="detail-info"></div>
+                <div class="progress-wrap">
+                  <div class="progress-label"><span>Progreso de aprobación</span><span id="detail-progress-pct">0%</span></div>
+                  <div class="progress-bar"><div class="progress-fill" id="detail-progress-bar" style="width:0%"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="detail-card">
+              <div class="detail-card-header"><div class="detail-card-title">Cadena de Aprobación</div></div>
+              <div class="detail-card-body"><div class="approval-chain" id="detail-chain"></div></div>
+            </div>
+          </div>
+          <div id="action-sidebar"></div>
+        </div>
+      </div>
+
+      <!-- USERS VIEW -->
+      <div id="view-users" style="display:none">
+        <div class="section-header" style="margin-bottom:20px">
+          <div>
+            <div class="section-title">Gestión de Usuarios</div>
+            <p style="font-size:13px;color:var(--gray-500);margin-top:4px">Administra los miembros del sistema y envía invitaciones por correo</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="background:var(--white);border:1px solid var(--gray-100);border-radius:var(--radius);padding:5px 12px;display:flex;align-items:center;gap:8px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="input" id="user-search" placeholder="Buscar usuario..." style="border:none;padding:0;font-size:13px;width:160px;outline:none;background:transparent" oninput="renderUsersView()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats strip users -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
+          <div class="stat-card" style="border-left:3px solid var(--navy)">
+            <div class="stat-label">Total usuarios</div>
+            <div class="stat-value" id="ustat-total">0</div>
+          </div>
+          <div class="stat-card" style="border-left:3px solid var(--green)">
+            <div class="stat-label">Activos</div>
+            <div class="stat-value" style="color:var(--green)" id="ustat-active">0</div>
+          </div>
+          <div class="stat-card" style="border-left:3px solid var(--amber)">
+            <div class="stat-label">Invitación pendiente</div>
+            <div class="stat-value" style="color:var(--amber)" id="ustat-invited">0</div>
+          </div>
+        </div>
+
+        <div class="users-grid" id="users-grid"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL: Nueva Solicitud -->
+<div class="overlay" id="modal-new">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-header-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
+      <div><div class="modal-title">Nueva Solicitud de Aprobación</div><div class="modal-subtitle">Define el tema, descripción y cadena de aprobadores</div></div>
+      <button class="modal-close" onclick="closeModal('modal-new')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label class="label">Tema / Asunto <span class="required">*</span></label><input class="input" id="new-subject" placeholder="Ej: Aprobación de presupuesto Q3 2026"/></div>
+        <div class="field"><label class="label">Descripción</label><textarea class="textarea" id="new-description" placeholder="Describe en detalle el asunto que requiere aprobación..."></textarea></div>
+        <div class="form-row">
+          <div class="field"><label class="label">Prioridad</label><select class="select" id="new-priority"><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option></select></div>
+          <div class="field"><label class="label">Fecha Límite</label><input class="input" id="new-deadline" type="date"/></div>
+        </div>
+        <div class="field">
+          <label class="label">Seleccionar Aprobadores <span class="required">*</span></label>
+          <div class="approver-panel">
+            <div class="approver-panel-header"><span>Usuarios disponibles</span><span style="font-weight:400;font-size:10px;color:var(--gray-500)">Haz clic para agregar en orden</span></div>
+            <div class="user-list" id="user-list"></div>
+          </div>
+        </div>
+        <div id="chain-preview-wrap" style="display:none">
+          <div class="label" style="margin-bottom:8px">Orden de aprobación</div>
+          <div class="chain-preview" id="chain-preview"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-new')">Cancelar</button>
+      <button class="btn btn-gold" onclick="createRequest()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Crear Solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Acción de Aprobación -->
+<div class="overlay" id="modal-action">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-icon" id="action-modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg></div>
+      <div><div class="modal-title" id="action-modal-title">Aprobar Solicitud</div><div class="modal-subtitle" id="action-modal-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('modal-action')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label class="label">Comentario <span style="color:var(--gray-300);font-weight:400">(opcional)</span></label><textarea class="textarea" id="action-comment" placeholder="Añade un comentario o justificación..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-action')">Cancelar</button>
+      <button class="btn" id="action-confirm-btn" onclick="confirmAction()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Agregar / Editar Usuario -->
+<div class="overlay" id="modal-user">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div><div class="modal-title" id="user-modal-title">Agregar Usuario</div><div class="modal-subtitle" id="user-modal-sub">Completa los datos del nuevo integrante</div></div>
+      <button class="modal-close" onclick="closeModal('modal-user')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row">
+          <div class="field"><label class="label">Nombre <span class="required">*</span></label><input class="input" id="user-name" placeholder="Ej: Francisca Vega"/></div>
+          <div class="field"><label class="label">Apellido <span class="required">*</span></label><input class="input" id="user-lastname" placeholder="Ej: González"/></div>
+        </div>
+        <div class="field"><label class="label">Correo Electrónico <span class="required">*</span></label><input class="input" id="user-email" type="email" placeholder="usuario@territoria.cl"/></div>
+        <div class="form-row">
+          <div class="field"><label class="label">Cargo / Rol</label><input class="input" id="user-role" placeholder="Ej: Gerente de Proyectos"/></div>
+          <div class="field"><label class="label">Departamento</label><input class="input" id="user-dept" placeholder="Ej: Operaciones"/></div>
+        </div>
+        <div class="field"><label class="label">Teléfono</label><input class="input" id="user-phone" placeholder="+56 9 XXXX XXXX"/></div>
+        <div class="field">
+          <label class="label">Permiso de aprobación</label>
+          <select class="select" id="user-perm">
+            <option value="approver">Aprobador — puede aprobar solicitudes</option>
+            <option value="viewer">Observador — solo puede ver</option>
+            <option value="admin">Administrador — acceso total</option>
+          </select>
+        </div>
+        <div style="background:var(--amber-bg);border:1px solid rgba(176,112,32,.2);border-radius:var(--radius);padding:12px 14px;display:flex;gap:10px;align-items:flex-start">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p style="font-size:12px;color:var(--amber);line-height:1.6">Al guardar, podrás enviar una invitación por correo electrónico al usuario para que acceda al sistema.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Guardar Usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Enviar Invitación -->
+<div class="overlay" id="modal-invite">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-header-icon" style="background:linear-gradient(135deg,#1A5A8A,#1E3D68)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--gold-light)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div>
+        <div class="modal-title">Enviar Invitación</div>
+        <div class="modal-subtitle" id="invite-modal-sub">Vista previa del correo de invitación</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-invite')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <!-- Invite metadata -->
+      <div class="invite-meta" id="invite-meta"></div>
+
+      <!-- Custom message -->
+      <div class="field" style="margin-bottom:16px">
+        <label class="label">Mensaje personalizado <span style="color:var(--gray-300);font-weight:400">(opcional)</span></label>
+        <textarea class="textarea" id="invite-message" rows="2" placeholder="Ej: Te invitamos a unirte al sistema de aprobaciones de Territoria. Por favor revisa tu bandeja..."></textarea>
+      </div>
+
+      <!-- Email preview -->
+      <div class="label" style="margin-bottom:8px">Vista previa del correo</div>
+      <div class="email-preview">
+        <div class="email-preview-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div>
+            <div class="ep-to">Para:</div>
+            <div class="ep-addr" id="invite-email-to"></div>
+          </div>
+        </div>
+        <div class="email-preview-body">
+          <div class="email-card">
+            <div class="email-card-header">
+              <div class="logo-text">Territoria</div>
+              <div class="logo-sub">Gestión de Aprobaciones</div>
+            </div>
+            <div class="email-card-content">
+              <h3 id="invite-email-title">Hola, has sido invitado</h3>
+              <p id="invite-email-body">Te invitamos a acceder al sistema de cadena de aprobaciones de Territoria.</p>
+              <a class="email-cta" href="#">Aceptar Invitación y Crear Contraseña →</a>
+              <p style="font-size:12px;color:var(--gray-500)">Este enlace es válido por <strong>72 horas</strong>. Si no solicitaste esta invitación, ignora este mensaje.</p>
+            </div>
+            <div class="email-card-footer">
+              Territoria SPA · Gestión de Aprobaciones · gstanke@territoria.cl
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-ghost" onclick="closeModal('modal-invite')" style="color:var(--gray-500)">Cancelar</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="copyInviteLink()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copiar enlace
+        </button>
+        <button class="btn btn-blue" onclick="sendInvite()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Enviar por correo
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Activar Cuenta (desde link de invitación) -->
+<div class="overlay" id="modal-activate" style="z-index:200">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header" style="background:var(--navy);border-radius:10px 10px 0 0">
+      <div class="modal-header-icon" style="background:rgba(196,151,59,.2)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--gold-light)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <div class="modal-title" style="color:var(--white)">Activar tu Cuenta</div>
+        <div class="modal-subtitle" style="color:rgba(250,250,248,.6)">Bienvenido al sistema de aprobaciones de Territoria</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div id="activate-welcome" style="text-align:center;padding:8px 0 20px">
+        <div id="activate-avatar" style="width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px"></div>
+        <div id="activate-name" style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--navy)"></div>
+        <div id="activate-role" style="font-size:13px;color:var(--gray-500);margin-top:2px"></div>
+        <div id="activate-email" style="font-size:12px;color:var(--blue);margin-top:4px"></div>
+      </div>
+      <div class="form-grid">
+        <div style="background:var(--green-bg);border:1px solid rgba(42,122,94,.2);border-radius:var(--radius);padding:11px 14px;display:flex;gap:10px;align-items:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="flex-shrink:0"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <p style="font-size:12px;color:var(--green);line-height:1.5">Invitación válida. Establece una contraseña para activar tu cuenta.</p>
+        </div>
+        <div class="field">
+          <label class="label">Contraseña <span class="required">*</span></label>
+          <input class="input" id="activate-pass" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password"/>
+        </div>
+        <div class="field">
+          <label class="label">Confirmar contraseña <span class="required">*</span></label>
+          <input class="input" id="activate-pass2" type="password" placeholder="Repite la contraseña" autocomplete="new-password"/>
+        </div>
+        <div id="activate-error" style="display:none;background:var(--red-bg);border:1px solid rgba(168,50,50,.2);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--red)"></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn btn-gold" style="width:100%;justify-content:center;padding:11px" onclick="activateAccount()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Activar mi cuenta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div style="font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--white);letter-spacing:.04em">Territoria</div>
+  <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:28px;margin-top:2px">Gestión de Aprobaciones</div>
+  <div class="loading-spinner"></div>
+  <div style="font-size:12px;color:rgba(250,250,248,.45)" id="loading-msg">Conectando con el servidor…</div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// ⚙️  CONFIGURACIÓN SUPABASE
+// Obtén estos valores en: supabase.com → tu proyecto → Settings → API
+// ══════════════════════════════════════════════════════════
+const SB_URL = 'https://zwgyyfjvonbblgkwmphn.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3Z3l5Zmp2b25iYmxna3dtcGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDIxNzgsImV4cCI6MjA5NjQxODE3OH0.14E5OVQxvoq6vQFB67EGv92tLmfNM06CushcBgDLoJg';
+
+const USE_SUPABASE = SB_URL.length > 0 && SB_KEY.length > 0;
+const SB_HDR = () => ({
+  'Content-Type':  'application/json',
+  'apikey':        SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Prefer':        'return=representation',
+});
+
+// ── DATOS POR DEFECTO ─────────────────────────────────────
+const DEFAULT_USERS = [
+  { id:1, name:'Gerardo Stanke',  role:'Administrador',        email:'gstanke@territoria.cl',  initials:'GS', color:0, status:'active',  dept:'Dirección',   phone:'+56 9 1234 5678', perm:'admin'    },
+  { id:2, name:'Ana Torres',      role:'Gerente de Proyectos', email:'atorres@territoria.cl',  initials:'AT', color:1, status:'active',  dept:'Proyectos',   phone:'+56 9 2345 6789', perm:'approver' },
+  { id:3, name:'Carlos Rojas',    role:'Director Financiero',  email:'crojas@territoria.cl',   initials:'CR', color:2, status:'active',  dept:'Finanzas',    phone:'+56 9 3456 7890', perm:'approver' },
+  { id:4, name:'María López',     role:'Jefa de Operaciones',  email:'mlopez@territoria.cl',   initials:'ML', color:3, status:'active',  dept:'Operaciones', phone:'+56 9 4567 8901', perm:'approver' },
+  { id:5, name:'Pedro Silva',     role:'Gerente Comercial',    email:'psilva@territoria.cl',   initials:'PS', color:4, status:'invited', dept:'Comercial',   phone:'+56 9 5678 9012', perm:'approver' },
+  { id:6, name:'Laura Méndez',    role:'Directora Legal',      email:'lmendez@territoria.cl',  initials:'LM', color:5, status:'active',  dept:'Legal',       phone:'+56 9 6789 0123', perm:'approver' },
+];
+const DEFAULT_REQUESTS = [
+  { id:1, code:'SP-001', subject:'Aprobación Presupuesto Proyecto Torre Poniente',    priority:'high',   createdAt:'2026-04-10', deadline:'2026-04-28',
+    description:'Solicitud de aprobación del presupuesto revisado para el proyecto Torre Poniente.',
+    approvers:[{userId:3,status:'approved',comment:'Cifras revisadas y correctas.',date:'2026-04-11'},{userId:4,status:'approved',comment:'Sin observaciones.',date:'2026-04-13'},{userId:6,status:'pending',comment:'',date:null}] },
+  { id:2, code:'SP-002', subject:'Contrato de Arrendamiento — Local Comercial Nido 3F', priority:'urgent', createdAt:'2026-04-18', deadline:'2026-04-25',
+    description:'Revisión y firma del contrato de arrendamiento para el local comercial 3F del edificio Nido Lucía.',
+    approvers:[{userId:6,status:'approved',comment:'Cláusulas verificadas.',date:'2026-04-19'},{userId:3,status:'pending',comment:'',date:null},{userId:2,status:'pending',comment:'',date:null}] },
+  { id:3, code:'SP-003', subject:'Modificación Planos Etapa 2 — Residencial Arrayán',  priority:'normal', createdAt:'2026-04-20', deadline:'2026-05-05',
+    description:'Aprobación de cambios estructurales menores en los planos de la etapa 2 del proyecto Arrayán.',
+    approvers:[{userId:2,status:'rejected',comment:'Requiere revisión por arquitecto externo.',date:'2026-04-21'}] },
+  { id:4, code:'SP-004', subject:'Selección Proveedor Ascensores — Torre Sur',         priority:'normal', createdAt:'2026-04-22', deadline:null,
+    description:'Definición del proveedor de ascensores para el proyecto Torre Sur.',
+    approvers:[{userId:5,status:'approved',comment:'Proveedor A es la mejor opción.',date:'2026-04-23'},{userId:3,status:'approved',comment:'',date:'2026-04-23'},{userId:1,status:'approved',comment:'Proceder.',date:'2026-04-24'}] },
+];
+
+// ── SUPABASE HELPERS ──────────────────────────────────────
+async function sbFetch(path, opts = {}) {
+  const res = await fetch(SB_URL + '/rest/v1/' + path, { headers: SB_HDR(), ...opts });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const e = new Error(err.message || 'Supabase error ' + res.status);
+    e.status = res.status;
+    throw e;
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+// ── CARGA Y GUARDADO ──────────────────────────────────────
+async function loadData() {
+  if (USE_SUPABASE) {
+    try {
+      const rows = await sbFetch('app_state?id=eq.1');
+      if (rows && rows.length > 0) {
+        USERS      = rows[0].users;
+        requests   = rows[0].requests;
+        nextUserId = rows[0].next_user_id;
+        nextId     = rows[0].next_id;
+      } else {
+        // Primera vez: insertar datos por defecto
+        await sbFetch('app_state', {
+          method: 'POST',
+          body: JSON.stringify({ id:1, users:DEFAULT_USERS, requests:DEFAULT_REQUESTS, next_user_id:7, next_id:5 }),
+        });
+        USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+        requests = JSON.parse(JSON.stringify(DEFAULT_REQUESTS));
+        nextUserId = 7; nextId = 5;
+      }
+    } catch(e) {
+      console.warn('Supabase no disponible, usando localStorage:', e);
+      loadFromLocalStorage();
+    }
+  } else {
+    loadFromLocalStorage();
+  }
+  requests.forEach(req => { if(!req.code) req.code='SP-'+String(req.id).padStart(3,'0'); });
+}
+
+function loadFromLocalStorage() {
+  try {
+    const u = localStorage.getItem('terr_users');
+    const r = localStorage.getItem('terr_requests');
+    USERS      = u ? JSON.parse(u) : JSON.parse(JSON.stringify(DEFAULT_USERS));
+    requests   = r ? JSON.parse(r) : JSON.parse(JSON.stringify(DEFAULT_REQUESTS));
+    nextUserId = parseInt(localStorage.getItem('terr_nextUserId')) || 7;
+    nextId     = parseInt(localStorage.getItem('terr_nextId'))     || 5;
+  } catch(e) {
+    USERS = JSON.parse(JSON.stringify(DEFAULT_USERS));
+    requests = JSON.parse(JSON.stringify(DEFAULT_REQUESTS));
+    nextUserId = 7; nextId = 5;
+  }
+}
+
+function saveData() {
+  if (USE_SUPABASE) {
+    sbFetch('app_state?id=eq.1', {
+      method: 'PATCH',
+      body: JSON.stringify({ users:USERS, requests, next_user_id:nextUserId, next_id:nextId }),
+    }).catch(() => showToast('Error al guardar en la nube.', 'error'));
+  } else {
+    try {
+      localStorage.setItem('terr_users',      JSON.stringify(USERS));
+      localStorage.setItem('terr_requests',   JSON.stringify(requests));
+      localStorage.setItem('terr_nextUserId', nextUserId);
+      localStorage.setItem('terr_nextId',     nextId);
+    } catch(e) { console.warn('localStorage error:', e); }
+  }
+}
+
+function showLoading(on) {
+  const el = document.getElementById('loading-overlay');
+  if (on) { el.classList.remove('hidden'); }
+  else    { setTimeout(() => el.classList.add('hidden'), 200); }
+}
+
+// ── VARIABLES DE ESTADO ───────────────────────────────────
+let USERS, requests, nextUserId, nextId;
+let currentFilter = 'all'; // estado: all | pending | approved | rejected
+let currentScope  = 'all'; // ámbito: all | mine
+let currentSort   = { field: null, dir: 'asc' }; // ordenamiento activo
+let currentAction = null;
+let selectedApprovers = [];
+let editingUserId = null;
+let invitingUserId = null;
+
+// ── HELPERS ───────────────────────────────────────────────
+function getUser(id)   { return USERS.find(u => u.id === id); }
+function formatDate(d) { if(!d) return '—'; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'}); }
+function isUrgent(d)   { if(!d) return false; return (new Date(d+'T00:00:00')-new Date())/86400000 <= 3; }
+function getInitials(n){ const p=n.trim().split(' '); return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase(); }
+function getRequestStatus(req){ if(req.approvers.some(a=>a.status==='rejected')) return 'rejected'; if(req.approvers.every(a=>a.status==='approved')) return 'approved'; return 'pending'; }
+function getProgress(req){ return Math.round(req.approvers.filter(a=>a.status!=='pending').length/req.approvers.length*100); }
+function getCurrentApproverIdx(req){ return req.approvers.findIndex(a=>a.status==='pending'); }
+
+// ── STATS ─────────────────────────────────────────────────
+function updateStats(){
+  document.getElementById('stat-total').textContent    = requests.length;
+  document.getElementById('stat-pending').textContent  = requests.filter(r=>getRequestStatus(r)==='pending').length;
+  document.getElementById('stat-approved').textContent = requests.filter(r=>getRequestStatus(r)==='approved').length;
+  document.getElementById('stat-rejected').textContent = requests.filter(r=>getRequestStatus(r)==='rejected').length;
+  document.getElementById('pending-badge').textContent = requests.filter(r=>getRequestStatus(r)==='pending').length;
+  // Badge "Mis Aprobaciones": solicitudes pendientes donde es mi turno de aprobar
+  const myTurn = requests.filter(r=>{
+    if(getRequestStatus(r)!=='pending') return false;
+    const idx=getCurrentApproverIdx(r);
+    return idx!==-1 && r.approvers[idx].userId===CURRENT_USER_ID;
+  }).length;
+  const mineBadge = document.getElementById('mine-badge');
+  mineBadge.style.display = myTurn ? 'inline' : 'none';
+  mineBadge.textContent = myTurn;
+  // Badge usuarios invitados
+  const inv = USERS.filter(u=>u.status==='invited').length;
+  const usersBadge = document.getElementById('users-badge');
+  usersBadge.style.display = inv ? 'inline' : 'none';
+  usersBadge.textContent = inv;
+}
+
+// ── TABLE ─────────────────────────────────────────────────
+const STATUS_ORDER = { pending:0, approved:1, rejected:2 };
+function getFilteredRequests(){
+  let src = [...requests];
+  // Filtro de ámbito
+  if(currentScope==='mine')
+    src = src.filter(r=>r.approvers.some(a=>a.userId===CURRENT_USER_ID));
+  // Filtro de estado
+  if(currentFilter!=='all')
+    src = src.filter(r=>getRequestStatus(r)===currentFilter);
+  // Ordenamiento
+  if(currentSort.field){
+    const d = currentSort.dir==='asc' ? 1 : -1;
+    src.sort((a,b)=>{
+      let va, vb;
+      switch(currentSort.field){
+        case 'code':
+          va = a.code||''; vb = b.code||'';
+          return va.localeCompare(vb, 'es', {numeric:true}) * d;
+        case 'subject':
+          va = a.subject.toLowerCase(); vb = b.subject.toLowerCase();
+          return va.localeCompare(vb,'es') * d;
+        case 'createdAt':
+          va = a.createdAt||''; vb = b.createdAt||'';
+          return (va < vb ? -1 : va > vb ? 1 : 0) * d;
+        case 'deadline':
+          // Sin fecha va al final siempre
+          va = a.deadline||'9999'; vb = b.deadline||'9999';
+          return (va < vb ? -1 : va > vb ? 1 : 0) * d;
+        case 'status':
+          va = STATUS_ORDER[getRequestStatus(a)]??0;
+          vb = STATUS_ORDER[getRequestStatus(b)]??0;
+          return (va - vb) * d;
+        default: return 0;
+      }
+    });
+  }
+  return src;
+}
+function toggleSort(field){
+  if(currentSort.field===field){
+    currentSort.dir = currentSort.dir==='asc' ? 'desc' : 'asc';
+  } else {
+    currentSort = { field, dir: 'asc' };
+  }
+  updateSortHeaders();
+  renderTable();
+}
+function updateSortHeaders(){
+  document.querySelectorAll('.th-sort').forEach(el=>{
+    const f = el.dataset.field;
+    el.classList.toggle('active', f===currentSort.field);
+    el.classList.remove('asc','desc');
+    if(f===currentSort.field) el.classList.add(currentSort.dir);
+  });
+}
+function renderTable(){
+  const list = document.getElementById('requests-list');
+  const src  = getFilteredRequests();
+  const emptyMsg = currentScope==='mine'
+    ? 'No tienes solicitudes en esta categoría'
+    : 'No hay solicitudes en esta categoría';
+  if(!src.length){ list.innerHTML=`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>${emptyMsg}</p></div>`; return; }
+  list.innerHTML = src.map((req,i)=>{
+    const st=getRequestStatus(req);
+    const stText = st==='pending'?'En proceso':st==='approved'?'Aprobada':'Rechazada';
+    const avs = req.approvers.slice(0,4).map(a=>{const u=getUser(a.userId);if(!u)return''; let b=a.status==='approved'?'var(--green)':a.status==='rejected'?'var(--red)':'#ccc'; return `<div class="mini-avatar av-${u.color}" style="border-color:${b}" title="${u.name}">${u.initials}</div>`;}).join('');
+    const extra = req.approvers.length>4?`<div class="mini-avatar more">+${req.approvers.length-4}</div>`:'';
+    return `<div class="table-row" onclick="openDetail(${req.id})" style="animation-delay:${i*40}ms">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--gold-dim);background:rgba(196,151,59,.1);border:1px solid rgba(196,151,59,.25);border-radius:4px;padding:1px 6px;flex-shrink:0">${req.code||''}</span>
+          <div class="row-subject">${req.subject}</div>
+        </div>
+        <div class="row-desc">${req.description}</div>
+      </div>
+      <div class="row-approvers">${avs}${extra}</div>
+      <div class="row-date">${formatDate(req.createdAt)}</div>
+      <div class="row-deadline ${isUrgent(req.deadline)?'urgent':''}">${req.deadline?formatDate(req.deadline):'—'}</div>
+      <div><span class="badge badge-${st}">${stText}</span></div>
+    </div>`;
+  }).join('');
+}
+function setFilter(f,el){ currentFilter=f; document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); renderTable(); }
+function resetFilterTabs(){ currentFilter='all'; document.querySelectorAll('.filter-tab').forEach((t,i)=>t.classList.toggle('active',i===0)); }
+
+// ── VIEW SWITCHING ────────────────────────────────────────
+function showView(view){
+  document.getElementById('view-dashboard').style.display  = 'none';
+  document.getElementById('view-detail').style.display     = 'none';
+  document.getElementById('view-users').style.display      = 'none';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+
+  if(view==='dashboard'||view==='history'){
+    currentScope='all'; resetFilterTabs();
+    document.getElementById('view-dashboard').style.display = 'block';
+    document.getElementById('nav-dashboard').classList.add('active');
+    document.getElementById('topbar-title').innerHTML = 'Panel General';
+    document.getElementById('section-title-text').textContent = 'Solicitudes de Aprobación';
+    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="openNewModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva Solicitud</button>`;
+    updateStats(); renderTable();
+  } else if(view==='mine'){
+    currentScope='mine'; resetFilterTabs();
+    document.getElementById('view-dashboard').style.display = 'block';
+    document.getElementById('nav-mine').classList.add('active');
+    const u=getUser(CURRENT_USER_ID);
+    document.getElementById('topbar-title').innerHTML = 'Mis Aprobaciones';
+    document.getElementById('section-title-text').textContent = 'Mis Solicitudes Asignadas';
+    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="openNewModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva Solicitud</button>`;
+    updateStats(); renderTable();
+  } else if(view==='users'){
+    document.getElementById('view-users').style.display = 'block';
+    document.getElementById('nav-users').classList.add('active');
+    document.getElementById('topbar-title').innerHTML = 'Usuarios';
+    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="openAddUserModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar Usuario</button>`;
+    renderUsersView();
+  } else if(view==='detail'){
+    document.getElementById('view-detail').style.display = 'block';
+    document.getElementById('nav-dashboard').classList.add('active');
+    document.getElementById('topbar-title').innerHTML = 'Detalle de Solicitud';
+    document.getElementById('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="openNewModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva Solicitud</button>`;
+  }
+}
+
+// ── DETAIL VIEW ───────────────────────────────────────────
+function openDetail(id){
+  const req=requests.find(r=>r.id===id); if(!req) return;
+  const status=getRequestStatus(req), progress=getProgress(req), currentIdx=getCurrentApproverIdx(req);
+  document.getElementById('detail-title').innerHTML =
+    (req.code ? `<span style="font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--gold);background:rgba(196,151,59,.12);border:1px solid rgba(196,151,59,.3);border-radius:5px;padding:2px 9px;vertical-align:middle;margin-right:10px;font-family:var(--font-body)">${req.code}</span>` : '')
+    + req.subject;
+  document.getElementById('detail-description').textContent = req.description||'Sin descripción.';
+  const bt=status==='pending'?'En proceso':status==='approved'?'Aprobada':'Rechazada';
+  document.getElementById('detail-status-badge').innerHTML=`<span class="badge badge-${status}">${bt}</span>`;
+  const pl={normal:'Normal',high:'Alta',urgent:'Urgente'};
+  document.getElementById('detail-info').innerHTML=`
+    <div class="info-item"><div class="info-label">Código</div><div class="info-value" style="font-weight:700;color:var(--gold-dim);letter-spacing:.06em">${req.code||'—'}</div></div>
+    <div class="info-item"><div class="info-label">Creado</div><div class="info-value">${formatDate(req.createdAt)}</div></div>
+    <div class="info-item"><div class="info-label">Fecha Límite</div><div class="info-value" style="${isUrgent(req.deadline)?'color:var(--red)':''}">${req.deadline?formatDate(req.deadline):'—'}</div></div>
+    <div class="info-item"><div class="info-label">Prioridad</div><div class="info-value">${pl[req.priority]||'Normal'}</div></div>
+    <div class="info-item"><div class="info-label">Total Aprobadores</div><div class="info-value">${req.approvers.length}</div></div>`;
+  document.getElementById('detail-progress-pct').textContent = progress+'%';
+  document.getElementById('detail-progress-bar').style.width = progress+'%';
+  document.getElementById('detail-chain').innerHTML = req.approvers.map((a,idx)=>{
+    const u=getUser(a.userId); if(!u) return '';
+    const isAct=idx===currentIdx&&status==='pending';
+    let nc=a.status==='approved'?'approved':a.status==='rejected'?'rejected':isAct?'waiting':'pending';
+    const sl=a.status==='approved'?'Aprobado':a.status==='rejected'?'Rechazado':isAct?'En espera':'Pendiente';
+    const sb=a.status==='approved'?'approved':a.status==='rejected'?'rejected':isAct?'pending':'draft';
+    const icon=a.status==='approved'?'✓':a.status==='rejected'?'✗':isAct?'…':(idx+1);
+    const cc=a.status==='approved'?'approved-comment':a.status==='rejected'?'rejected-comment':'';
+    const com=a.comment?`<div class="node-comment ${cc}">"${a.comment}"</div>`:'';
+    return `<div class="chain-node">
+      <div class="node-icon ${nc}">${icon}</div>
+      <div class="node-content">
+        <div class="node-name">${u.name}</div>
+        <div class="node-role">${u.role}</div>
+        <div class="node-meta"><span class="badge badge-${sb}">${sl}${a.date?' · '+formatDate(a.date):''}</span></div>
+        ${com}
+      </div>
+    </div>`;
+  }).join('');
+
+  const sb=document.getElementById('action-sidebar');
+  const CUID=1;
+  const mi=req.approvers.findIndex(a=>a.userId===CUID);
+  const canAct=mi!==-1&&mi===currentIdx&&status==='pending'&&req.approvers[mi].status==='pending';
+  if(canAct){
+    sb.innerHTML=`<div class="action-panel"><div class="action-header"><div class="gold-dot"></div><div class="action-title">Tu Aprobación</div></div>
+    <div class="action-body"><p class="action-desc">Es tu turno de revisar y emitir tu resolución sobre esta solicitud.</p>
+    <div class="action-comment"><label>Comentario (opcional)</label><textarea class="textarea" id="inline-comment" placeholder="Añade un comentario..."></textarea></div>
+    <div class="action-buttons">
+      <button class="btn btn-reject" onclick="openActionModal(${id},'reject',${mi})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Rechazar</button>
+      <button class="btn btn-approve" onclick="openActionModal(${id},'approve',${mi})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Aprobar</button>
+    </div></div></div>`;
+  } else if(status!=='pending'){
+    const msg=status==='approved'?'Esta solicitud ha sido completamente aprobada.':'Esta solicitud fue rechazada.';
+    sb.innerHTML=`<div class="action-panel"><div class="action-header"><div class="gold-dot"></div><div class="action-title">Estado Final</div></div><div class="action-locked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><p>${msg}</p></div></div>`;
+  } else {
+    sb.innerHTML=`<div class="action-panel"><div class="action-header"><div class="gold-dot"></div><div class="action-title">Acción Requerida</div></div><div class="action-locked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><p>No es tu turno en esta cadena o ya has emitido tu resolución.</p></div></div>`;
+  }
+  showView('detail');
+}
+
+// ── APPROVAL ACTIONS ──────────────────────────────────────
+function openActionModal(reqId,type,idx){
+  currentAction={reqId,type,approverIdx:idx};
+  const req=requests.find(r=>r.id===reqId), u=getUser(req.approvers[idx].userId);
+  document.getElementById('action-modal-title').textContent = type==='approve'?'Confirmar Aprobación':'Confirmar Rechazo';
+  document.getElementById('action-modal-sub').textContent = `${u.name} · ${req.subject}`;
+  document.getElementById('action-comment').value='';
+  const btn=document.getElementById('action-confirm-btn');
+  btn.className=`btn ${type==='approve'?'btn-approve':'btn-reject'}`;
+  btn.textContent=type==='approve'?'Confirmar Aprobación':'Confirmar Rechazo';
+  document.getElementById('modal-action').classList.add('open');
+}
+function confirmAction(){
+  if(!currentAction) return;
+  const {reqId,type,approverIdx}=currentAction;
+  const req=requests.find(r=>r.id===reqId);
+  req.approvers[approverIdx].status  = type==='approve'?'approved':'rejected';
+  req.approvers[approverIdx].comment = document.getElementById('action-comment').value.trim();
+  req.approvers[approverIdx].date    = new Date().toISOString().slice(0,10);
+  saveData();
+  closeModal('modal-action');
+  showToast(type==='approve'?'Solicitud aprobada correctamente.':'Solicitud rechazada.',type==='approve'?'success':'error');
+  openDetail(reqId); updateStats(); currentAction=null;
+}
+
+// ── NEW REQUEST ───────────────────────────────────────────
+function openNewModal(){
+  selectedApprovers=[];
+  ['new-subject','new-description','new-deadline'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('new-priority').value='normal';
+  renderNewUserList(); renderChainPreview();
+  document.getElementById('modal-new').classList.add('open');
+}
+function renderNewUserList(){
+  document.getElementById('user-list').innerHTML = USERS.map(u=>{
+    const sel=selectedApprovers.includes(u.id);
+    return `<div class="user-item ${sel?'selected':''}" onclick="toggleApprover(${u.id})">
+      <div class="user-item-avatar av-${u.color}">${u.initials}</div>
+      <div class="user-item-info"><div class="user-item-name">${u.name}</div><div class="user-item-role">${u.role}</div></div>
+      <div class="user-item-check"></div>
+    </div>`;
+  }).join('');
+}
+function toggleApprover(uid){ const i=selectedApprovers.indexOf(uid); i>-1?selectedApprovers.splice(i,1):selectedApprovers.push(uid); renderNewUserList(); renderChainPreview(); }
+function renderChainPreview(){
+  const wrap=document.getElementById('chain-preview-wrap'), el=document.getElementById('chain-preview');
+  if(!selectedApprovers.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  el.innerHTML=selectedApprovers.map((uid,i)=>{
+    const u=getUser(uid);
+    return `<div class="chain-step">
+      <div class="chain-step-num">${i+1}</div>
+      <div class="user-item-avatar av-${u.color}" style="width:26px;height:26px;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">${u.initials}</div>
+      <div class="chain-step-name">${u.name} <span style="color:var(--gray-500);font-size:11px;font-weight:400">· ${u.role}</span></div>
+      <button class="chain-step-remove" onclick="removeApprover(${uid},event)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>`;
+  }).join('');
+}
+function removeApprover(uid,e){ e.stopPropagation(); selectedApprovers=selectedApprovers.filter(id=>id!==uid); renderNewUserList(); renderChainPreview(); }
+function createRequest(){
+  const subject=document.getElementById('new-subject').value.trim();
+  if(!subject){showToast('El tema es obligatorio.','error');return;}
+  if(!selectedApprovers.length){showToast('Selecciona al menos un aprobador.','error');return;}
+  const newCode='SP-'+String(nextId).padStart(3,'0');
+  requests.unshift({id:nextId++,code:newCode,subject,description:document.getElementById('new-description').value.trim(),priority:document.getElementById('new-priority').value,createdAt:new Date().toISOString().slice(0,10),deadline:document.getElementById('new-deadline').value||null,approvers:selectedApprovers.map(uid=>({userId:uid,status:'pending',comment:'',date:null}))});
+  saveData();
+  closeModal('modal-new'); showToast('Solicitud creada y enviada.','success'); updateStats(); renderTable();
+}
+
+// ── USERS VIEW ────────────────────────────────────────────
+function renderUsersView(){
+  const q=(document.getElementById('user-search')?.value||'').toLowerCase().trim();
+  const filtered = q ? USERS.filter(u=>u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q)||u.role.toLowerCase().includes(q)) : USERS;
+  document.getElementById('ustat-total').textContent   = USERS.length;
+  document.getElementById('ustat-active').textContent  = USERS.filter(u=>u.status==='active').length;
+  document.getElementById('ustat-invited').textContent = USERS.filter(u=>u.status==='invited').length;
+
+  const grid=document.getElementById('users-grid');
+  if(!filtered.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No se encontraron usuarios</p></div>`;return;}
+
+  const permLabel={admin:'Administrador',approver:'Aprobador',viewer:'Observador'};
+  grid.innerHTML=filtered.map((u,i)=>{
+    const st=u.status==='active'?'active':u.status==='invited'?'invited':'inactive';
+    const stLabel=st==='active'?'Activo':st==='invited'?'Invitado':'Inactivo';
+    const invBtn = u.status!=='active'
+      ? `<button class="btn btn-blue btn-sm" onclick="openInviteModal(${u.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>${u.status==='invited'?'Reenviar':'Invitar'}</button>`
+      : `<button class="btn btn-outline btn-sm" onclick="openInviteModal(${u.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Correo</button>`;
+    return `<div class="user-card" style="animation-delay:${i*50}ms">
+      <div class="user-card-top">
+        <div class="user-card-avatar av-${u.color}">
+          ${u.initials}
+          <div class="status-dot ${st}"></div>
+        </div>
+        <div class="user-card-info">
+          <div class="user-card-name">${u.name}</div>
+          <div class="user-card-role">${u.role}${u.dept?' · '+u.dept:''}</div>
+          <div class="user-card-email">${u.email}</div>
+        </div>
+      </div>
+      <div class="user-card-bottom">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge badge-${st}">${stLabel}</span>
+          <span style="font-size:11px;color:var(--gray-500)">${permLabel[u.perm]||'Aprobador'}</span>
+        </div>
+        <div class="user-card-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEditUserModal(${u.id})" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          ${invBtn}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ADD / EDIT USER ───────────────────────────────────────
+function openAddUserModal(){
+  editingUserId=null;
+  document.getElementById('user-modal-title').textContent='Agregar Usuario';
+  document.getElementById('user-modal-sub').textContent='Completa los datos del nuevo integrante';
+  ['user-name','user-lastname','user-email','user-role','user-dept','user-phone'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('user-perm').value='approver';
+  document.getElementById('modal-user').classList.add('open');
+}
+function openEditUserModal(uid){
+  const u=getUser(uid); if(!u) return;
+  editingUserId=uid;
+  document.getElementById('user-modal-title').textContent='Editar Usuario';
+  document.getElementById('user-modal-sub').textContent=u.name;
+  const parts=u.name.split(' ');
+  document.getElementById('user-name').value=parts[0]||'';
+  document.getElementById('user-lastname').value=parts.slice(1).join(' ')||'';
+  document.getElementById('user-email').value=u.email||'';
+  document.getElementById('user-role').value=u.role||'';
+  document.getElementById('user-dept').value=u.dept||'';
+  document.getElementById('user-phone').value=u.phone||'';
+  document.getElementById('user-perm').value=u.perm||'approver';
+  document.getElementById('modal-user').classList.add('open');
+}
+function saveUser(){
+  const fname=document.getElementById('user-name').value.trim();
+  const lname=document.getElementById('user-lastname').value.trim();
+  const email=document.getElementById('user-email').value.trim();
+  if(!fname){showToast('El nombre es obligatorio.','error');return;}
+  if(!email||!/\S+@\S+\.\S+/.test(email)){showToast('Ingresa un correo válido.','error');return;}
+  const fullName=(fname+' '+lname).trim();
+  const role =document.getElementById('user-role').value.trim();
+  const dept =document.getElementById('user-dept').value.trim();
+  const phone=document.getElementById('user-phone').value.trim();
+  const perm =document.getElementById('user-perm').value;
+  const initials=getInitials(fullName);
+
+  if(editingUserId){
+    const u=getUser(editingUserId);
+    u.name=fullName; u.email=email; u.role=role; u.dept=dept; u.phone=phone; u.perm=perm; u.initials=initials;
+    saveData();
+    closeModal('modal-user'); showToast('Usuario actualizado correctamente.','success');
+  } else {
+    const colorIdx=nextUserId%10;
+    USERS.push({id:nextUserId++,name:fullName,role,email,initials,color:colorIdx,status:'invited',dept,phone,perm});
+    saveData();
+    closeModal('modal-user');
+    showToast('Usuario agregado. Ahora puedes enviarle la invitación.','success');
+    // auto-open invite
+    setTimeout(()=>openInviteModal(nextUserId-1),400);
+  }
+  renderUsersView(); updateStats();
+  renderSidebarUser(); // refrescar sidebar si se editó el usuario actual
+}
+
+// ── INVITE ────────────────────────────────────────────────
+function openInviteModal(uid){
+  const u=getUser(uid); if(!u) return;
+  invitingUserId=uid;
+  document.getElementById('invite-modal-sub').textContent=`Para: ${u.name}`;
+  document.getElementById('invite-email-to').textContent=u.email;
+  document.getElementById('invite-email-title').textContent=`Hola ${u.name.split(' ')[0]}, has sido invitado`;
+  document.getElementById('invite-email-body').textContent=`Gerardo Stanke te ha invitado a acceder al sistema de cadena de aprobaciones de Territoria. Podrás revisar y aprobar solicitudes que se te asignen como parte de los flujos de trabajo del equipo.`;
+  document.getElementById('invite-message').value='';
+  document.getElementById('invite-meta').innerHTML=`
+    <div class="invite-meta-item"><div class="invite-meta-label">Destinatario</div><div class="invite-meta-value">${u.name}</div></div>
+    <div class="invite-meta-item"><div class="invite-meta-label">Correo</div><div class="invite-meta-value">${u.email}</div></div>
+    <div class="invite-meta-item"><div class="invite-meta-label">Cargo</div><div class="invite-meta-value">${u.role||'—'}</div></div>
+    <div class="invite-meta-item"><div class="invite-meta-label">Permiso</div><div class="invite-meta-value">${{admin:'Administrador',approver:'Aprobador',viewer:'Observador'}[u.perm]||'Aprobador'}</div></div>`;
+  document.getElementById('modal-invite').classList.add('open');
+}
+// ── TOKENS DE INVITACIÓN ──────────────────────────────────
+async function generateToken(userId){
+  const arr = new Uint8Array(18);
+  crypto.getRandomValues(arr);
+  const token = Array.from(arr, b=>b.toString(16).padStart(2,'0')).join('');
+  if(USE_SUPABASE){
+    await sbFetch('invite_tokens', {
+      method: 'POST',
+      body: JSON.stringify({ token, user_id: userId }),
+    });
+  } else {
+    const tokens = JSON.parse(localStorage.getItem('terr_tokens')||'{}');
+    tokens[token] = { userId, created: Date.now() };
+    localStorage.setItem('terr_tokens', JSON.stringify(tokens));
+  }
+  return token;
+}
+function getInviteLink(token){
+  const base = window.location.href.split('#')[0];
+  return base+'#invite='+token;
+}
+
+async function sendInvite(){
+  const u=getUser(invitingUserId); if(!u) return;
+  const msg=document.getElementById('invite-message').value.trim();
+  const nombre=u.name.split(' ')[0];
+  const cuerpo=msg||'Te invitamos a acceder al sistema de cadena de aprobaciones de Territoria.';
+  try {
+    const token = await generateToken(u.id);
+    const link  = getInviteLink(token);
+    const subject=encodeURIComponent('Invitacion al Sistema de Aprobaciones - Territoria');
+    const body=encodeURIComponent(
+      'Hola '+nombre+',\n\n'+cuerpo+'\n\n'
+      +'Para activar tu cuenta, haz clic en el siguiente enlace:\n'+link+'\n\n'
+      +'(Enlace valido por 72 horas)\n\nSaludos,\nGerardo Stanke\nTerritoria SPA'
+    );
+    const a=document.createElement('a');
+    a.href='mailto:'+u.email+'?subject='+subject+'&body='+body;
+    a.style.display='none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>document.body.removeChild(a),200);
+    u.status='invited'; saveData();
+    closeModal('modal-invite');
+    showToast('Invitacion abierta en tu cliente de correo — '+u.email,'success');
+    renderUsersView(); updateStats();
+  } catch(e) {
+    showToast('Error al generar el enlace de invitación.','error');
+  }
+}
+async function copyInviteLink(){
+  const u=getUser(invitingUserId); if(!u) return;
+  try {
+    const token = await generateToken(u.id);
+    const link  = getInviteLink(token);
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(link)
+        .then(()=>showToast('Enlace de invitacion copiado al portapapeles.','success'))
+        .catch(()=>fallbackCopy(link));
+    } else { fallbackCopy(link); }
+  } catch(e) {
+    showToast('Error al generar el enlace.','error');
+  }
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');
+  ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); showToast('Enlace copiado.','success'); }
+  catch(e){ showToast('Copia manual: '+text,''); }
+  document.body.removeChild(ta);
+}
+
+// ── ACTIVAR CUENTA (desde link de invitación) ─────────────
+let activatingToken = null;
+async function checkInviteHash(){
+  const hash = window.location.hash;
+  if(!hash.startsWith('#invite=')) return;
+  const token = hash.slice(8);
+  history.replaceState(null,'',window.location.pathname+window.location.search);
+  try {
+    let entry;
+    if(USE_SUPABASE){
+      const rows = await sbFetch('invite_tokens?token=eq.'+token);
+      if(!rows || !rows.length) throw Object.assign(new Error(),{status:404});
+      const row = rows[0];
+      if(Date.now()-new Date(row.created_at).getTime() > 72*3600*1000) throw Object.assign(new Error(),{status:410});
+      entry = { userId: row.user_id };
+    } else {
+      const tokens = JSON.parse(localStorage.getItem('terr_tokens')||'{}');
+      entry = tokens[token];
+      if(!entry) throw Object.assign(new Error(),{status:404});
+      if(Date.now()-entry.created > 72*3600*1000) throw Object.assign(new Error(),{status:410});
+    }
+    const u=getUser(entry.userId);
+    if(!u){ showActivateError('El usuario asociado a esta invitación ya no existe.'); return; }
+    if(u.status==='active'){ showActivateError('Esta cuenta ya fue activada. Puedes ingresar directamente.'); return; }
+    activatingToken = token;
+    const av=document.getElementById('activate-avatar');
+    av.textContent=u.initials;
+    av.className='';
+    av.style.cssText='width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px';
+    av.classList.add('av-'+u.color);
+    document.getElementById('activate-name').textContent  = u.name;
+    document.getElementById('activate-role').textContent  = u.role+(u.dept?' · '+u.dept:'');
+    document.getElementById('activate-email').textContent = u.email;
+    document.getElementById('activate-pass').value  = '';
+    document.getElementById('activate-pass2').value = '';
+    document.getElementById('activate-error').style.display='none';
+    document.getElementById('modal-activate').classList.add('open');
+  } catch(e) {
+    const msg = e.status===404 ? 'Este enlace no es válido o ya fue usado.'
+              : e.status===410 ? 'Este enlace expiró. Solicita una nueva invitación.'
+              : 'No se pudo verificar el enlace. Intenta nuevamente.';
+    showActivateError(msg);
+  }
+}
+function showActivateError(msg){
+  const modal=document.getElementById('modal-activate');
+  document.getElementById('activate-welcome').innerHTML=
+    '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.5" style="margin:0 auto 12px;display:block"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+    +'<div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px">Enlace no válido</div>'
+    +'<p style="font-size:13px;color:var(--gray-500);line-height:1.6">'+msg+'</p>';
+  document.querySelector('#modal-activate .modal-body .form-grid').style.display='none';
+  document.querySelector('#modal-activate .modal-footer').innerHTML=
+    '<button class="btn btn-outline" style="width:100%;justify-content:center" onclick="closeModal(\'modal-activate\')">Cerrar</button>';
+  modal.classList.add('open');
+}
+async function activateAccount(){
+  const pass  = document.getElementById('activate-pass').value;
+  const pass2 = document.getElementById('activate-pass2').value;
+  const errEl = document.getElementById('activate-error');
+  errEl.style.display='none';
+  if(pass.length<8){ errEl.textContent='La contraseña debe tener al menos 8 caracteres.'; errEl.style.display='block'; return; }
+  if(pass!==pass2) { errEl.textContent='Las contraseñas no coinciden.';                   errEl.style.display='block'; return; }
+  try {
+    if(USE_SUPABASE){
+      const rows = await sbFetch('invite_tokens?token=eq.'+activatingToken);
+      if(rows && rows.length){ const u=getUser(rows[0].user_id); if(u){ u.status='active'; } }
+      await Promise.all([
+        sbFetch('app_state?id=eq.1', { method:'PATCH', body:JSON.stringify({users:USERS,requests,next_user_id:nextUserId,next_id:nextId}) }),
+        sbFetch('invite_tokens?token=eq.'+activatingToken, { method:'DELETE' }),
+      ]);
+    } else {
+      const tokens = JSON.parse(localStorage.getItem('terr_tokens')||'{}');
+      const entry  = tokens[activatingToken];
+      if(entry){ const u=getUser(entry.userId); if(u){ u.status='active'; saveData(); } delete tokens[activatingToken]; localStorage.setItem('terr_tokens',JSON.stringify(tokens)); }
+    }
+    closeModal('modal-activate');
+    showToast('¡Cuenta activada correctamente! Bienvenido al sistema.','success');
+    if(document.getElementById('view-users').style.display!=='none') renderUsersView();
+    updateStats(); activatingToken=null;
+  } catch(e) {
+    errEl.textContent='Error al activar la cuenta. Intenta nuevamente.';
+    errEl.style.display='block';
+  }
+}
+
+// ── MODAL HELPERS ─────────────────────────────────────────
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+
+// ── TOAST ─────────────────────────────────────────────────
+function showToast(msg,type=''){
+  const c=document.getElementById('toast-container'), t=document.createElement('div');
+  t.className=`toast ${type}`;
+  const icons={success:'<polyline points="20 6 9 17 4 12"/>',error:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',default:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'};
+  t.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">${icons[type]||icons.default}</svg>${msg}`;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(20px)';t.style.transition='.3s ease';setTimeout(()=>t.remove(),300);},3200);
+}
+
+// ── SIDEBAR USER ──────────────────────────────────────────
+const CURRENT_USER_ID = 1;
+function renderSidebarUser(){
+  const u = getUser(CURRENT_USER_ID);
+  if(!u) return;
+  const av = document.getElementById('sidebar-avatar');
+  // limpiar clases de color previas y aplicar la correcta
+  av.className = 'user-avatar av-' + u.color;
+  av.textContent = u.initials;
+  document.getElementById('sidebar-name').textContent = u.name;
+  document.getElementById('sidebar-role').textContent = u.role || 'Usuario';
+}
+function goToMyProfile(){
+  showView('users');
+  // breve delay para que el grid renderice, luego resalta la tarjeta
+  setTimeout(()=>{
+    const cards = document.querySelectorAll('.user-card');
+    cards.forEach(card => {
+      const nameEl = card.querySelector('.user-card-name');
+      const u = getUser(CURRENT_USER_ID);
+      if(nameEl && u && nameEl.textContent === u.name){
+        card.style.outline = '2px solid var(--gold)';
+        card.style.outlineOffset = '2px';
+        card.scrollIntoView({ behavior:'smooth', block:'center' });
+        setTimeout(()=>{ card.style.outline=''; card.style.outlineOffset=''; }, 2200);
+      }
+    });
+  }, 120);
+}
+
+// ── INIT ──────────────────────────────────────────────────
+(async () => {
+  showLoading(true);
+  document.getElementById('loading-msg').textContent =
+    USE_SUPABASE ? 'Conectando con Supabase…' : 'Cargando datos locales…';
+  await loadData();
+  showLoading(false);
+  updateStats();
+  renderTable();
+  renderSidebarUser();
+  await checkInviteHash();
+})();
+</script>
+</body>
+</html>
