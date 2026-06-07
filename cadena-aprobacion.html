@@ -370,6 +370,30 @@
   #loading-overlay.hidden { opacity:0;pointer-events:none; }
   .loading-spinner { width:34px;height:34px;border:3px solid rgba(196,151,59,.25);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;margin-bottom:20px; }
 
+  /* ── FILE UPLOAD ── */
+  .file-drop-zone { border:2px dashed var(--gray-300); border-radius:var(--radius); padding:20px; text-align:center; cursor:pointer; transition:var(--transition); background:var(--cream); }
+  .file-drop-zone:hover, .file-drop-zone.drag-over { border-color:var(--navy); background:rgba(11,29,53,.04); }
+  .file-drop-zone svg { width:28px; height:28px; color:var(--gray-300); margin-bottom:8px; }
+  .file-drop-zone p { font-size:13px; color:var(--gray-500); margin:0; }
+  .file-drop-zone span { font-size:11px; color:var(--gray-300); }
+  .file-item { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--white); border:1px solid var(--gray-100); border-radius:var(--radius); animation:fadeRow .2s ease; }
+  .file-icon { width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:9px; font-weight:700; letter-spacing:.05em; }
+  .file-icon.pdf  { background:#FAE8E8; color:var(--red); }
+  .file-icon.img  { background:var(--blue-bg); color:var(--blue); }
+  .file-icon.word { background:#E8EEF9; color:#2B5EAB; }
+  .file-icon.excel{ background:var(--green-bg); color:var(--green); }
+  .file-icon.other{ background:var(--gray-100); color:var(--gray-500); }
+  .file-name { flex:1; font-size:12px; font-weight:500; color:var(--navy); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .file-size { font-size:11px; color:var(--gray-500); flex-shrink:0; }
+  .file-remove { background:none; border:none; cursor:pointer; color:var(--gray-300); padding:2px; border-radius:3px; display:flex; transition:var(--transition); }
+  .file-remove:hover { color:var(--red); background:var(--red-bg); }
+  /* Adjuntos en detalle */
+  .attachment-item { display:flex; align-items:center; gap:10px; padding:9px 14px; background:var(--white); border:1px solid var(--gray-100); border-radius:var(--radius); text-decoration:none; transition:var(--transition); }
+  .attachment-item:hover { border-color:var(--navy); background:rgba(11,29,53,.02); }
+  /* Originador en tabla */
+  .row-originator { display:flex; align-items:center; gap:5px; margin-top:3px; }
+  .row-originator .mini-av { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#fff; flex-shrink:0; }
+
   /* ── MISC ── */
   ::-webkit-scrollbar { width:5px; height:5px; }
   ::-webkit-scrollbar-track { background:transparent; }
@@ -502,6 +526,15 @@
                 </div>
               </div>
             </div>
+            <div class="detail-card" id="detail-attachments-card" style="display:none;margin-bottom:16px">
+              <div class="detail-card-header">
+                <div class="detail-card-title">Archivos adjuntos</div>
+                <span id="detail-attachments-count" style="font-size:11px;color:var(--gray-500)"></span>
+              </div>
+              <div class="detail-card-body" style="padding:14px 22px">
+                <div id="detail-attachments-list" style="display:flex;flex-direction:column;gap:8px"></div>
+              </div>
+            </div>
             <div class="detail-card">
               <div class="detail-card-header"><div class="detail-card-title">Cadena de Aprobación</div></div>
               <div class="detail-card-body"><div class="approval-chain" id="detail-chain"></div></div>
@@ -575,6 +608,26 @@
         <div id="chain-preview-wrap" style="display:none">
           <div class="label" style="margin-bottom:8px">Orden de aprobación</div>
           <div class="chain-preview" id="chain-preview"></div>
+        </div>
+
+        <!-- ARCHIVOS ADJUNTOS -->
+        <div class="field">
+          <label class="label">Archivos adjuntos <span style="color:var(--gray-300);font-weight:400">(opcional)</span></label>
+          <div class="file-drop-zone" id="file-drop-zone"
+               onclick="document.getElementById('file-input').click()"
+               ondragover="handleDragOver(event)"
+               ondragleave="handleDragLeave(event)"
+               ondrop="handleDrop(event)">
+            <input type="file" id="file-input" multiple
+                   accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.txt"
+                   onchange="handleFileSelect(event)" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+            </svg>
+            <p>Arrastra archivos aquí o <strong>haz clic</strong> para seleccionar</p>
+            <span>PDF, JPG, PNG, Word, Excel · máx 50 MB por archivo</span>
+          </div>
+          <div id="selected-files-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px"></div>
         </div>
       </div>
     </div>
@@ -1108,13 +1161,17 @@ function renderTable(){
     const stText = st==='pending'?'En proceso':st==='approved'?'Aprobada':'Rechazada';
     const avs = req.approvers.slice(0,4).map(a=>{const u=getUser(a.userId);if(!u)return''; let b=a.status==='approved'?'var(--green)':a.status==='rejected'?'var(--red)':'#ccc'; return `<div class="mini-avatar av-${u.color}" style="border-color:${b}" title="${u.name}">${u.initials}</div>`;}).join('');
     const extra = req.approvers.length>4?`<div class="mini-avatar more">+${req.approvers.length-4}</div>`:'';
+    const creator = req.createdBy ? getUser(req.createdBy) : null;
+    const hasFiles = req.attachments && req.attachments.length > 0;
     return `<div class="table-row" onclick="openDetail(${req.id})" style="animation-delay:${i*40}ms">
       <div>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--gold-dim);background:rgba(196,151,59,.1);border:1px solid rgba(196,151,59,.25);border-radius:4px;padding:1px 6px;flex-shrink:0">${req.code||''}</span>
           <div class="row-subject">${req.subject}</div>
+          ${hasFiles?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" stroke-width="2" title="${req.attachments.length} archivo(s)"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>`:''}
         </div>
         <div class="row-desc">${req.description}</div>
+        ${creator?`<div class="row-originator"><div class="mini-av av-${creator.color}">${creator.initials}</div><span style="font-size:11px;color:var(--gray-500)">${creator.name}</span></div>`:''}
       </div>
       <div class="row-approvers">${avs}${extra}</div>
       <div class="row-date">${formatDate(req.createdAt)}</div>
@@ -1185,14 +1242,17 @@ function openDetail(id){
   const bt=status==='pending'?'En proceso':status==='approved'?'Aprobada':'Rechazada';
   document.getElementById('detail-status-badge').innerHTML=`<span class="badge badge-${status}">${bt}</span>`;
   const pl={normal:'Normal',high:'Alta',urgent:'Urgente'};
+  const creator = req.createdBy ? getUser(req.createdBy) : null;
   document.getElementById('detail-info').innerHTML=`
     <div class="info-item"><div class="info-label">Código</div><div class="info-value" style="font-weight:700;color:var(--gold-dim);letter-spacing:.06em">${req.code||'—'}</div></div>
+    <div class="info-item"><div class="info-label">Originador</div><div class="info-value" style="display:flex;align-items:center;gap:6px">${creator?`<div style="width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0" class="av-${creator.color}">${creator.initials}</div><span>${creator.name}</span>`:'—'}</div></div>
     <div class="info-item"><div class="info-label">Creado</div><div class="info-value">${formatDate(req.createdAt)}</div></div>
     <div class="info-item"><div class="info-label">Fecha Límite</div><div class="info-value" style="${isUrgent(req.deadline)?'color:var(--red)':''}">${req.deadline?formatDate(req.deadline):'—'}</div></div>
     <div class="info-item"><div class="info-label">Prioridad</div><div class="info-value">${pl[req.priority]||'Normal'}</div></div>
     <div class="info-item"><div class="info-label">Total Aprobadores</div><div class="info-value">${req.approvers.length}</div></div>`;
   document.getElementById('detail-progress-pct').textContent = progress+'%';
   document.getElementById('detail-progress-bar').style.width = progress+'%';
+  renderDetailAttachments(req);
   document.getElementById('detail-chain').innerHTML = req.approvers.map((a,idx)=>{
     const u=getUser(a.userId); if(!u) return '';
     const isAct=idx===currentIdx&&status==='pending';
@@ -1272,6 +1332,104 @@ function confirmAction(){
   openDetail(reqId); updateStats(); currentAction=null;
 }
 
+// ── ARCHIVOS ADJUNTOS ─────────────────────────────────────
+let selectedFiles = []; // archivos seleccionados antes de crear la solicitud
+
+function getFileCategory(type, name){
+  if(type==='application/pdf'||name.endsWith('.pdf')) return 'pdf';
+  if(type.startsWith('image/')) return 'img';
+  if(type.includes('word')||name.endsWith('.doc')||name.endsWith('.docx')) return 'word';
+  if(type.includes('excel')||type.includes('spreadsheet')||name.endsWith('.xls')||name.endsWith('.xlsx')) return 'excel';
+  return 'other';
+}
+function getFileLabel(type, name){
+  const cat=getFileCategory(type,name);
+  return {pdf:'PDF',img:'IMG',word:'DOC',excel:'XLS',other:'FILE'}[cat];
+}
+function formatSize(bytes){
+  if(bytes<1024) return bytes+'B';
+  if(bytes<1024*1024) return Math.round(bytes/1024)+'KB';
+  return (bytes/1024/1024).toFixed(1)+'MB';
+}
+function renderSelectedFiles(){
+  const el=document.getElementById('selected-files-list');
+  if(!selectedFiles.length){ el.innerHTML=''; return; }
+  el.innerHTML=selectedFiles.map((f,i)=>{
+    const cat=getFileCategory(f.type,f.name);
+    return `<div class="file-item">
+      <div class="file-icon ${cat}">${getFileLabel(f.type,f.name)}</div>
+      <span class="file-name" title="${f.name}">${f.name}</span>
+      <span class="file-size">${formatSize(f.size)}</span>
+      <button class="file-remove" onclick="removeFile(${i},event)" title="Quitar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+function handleFileSelect(e){ addFiles(Array.from(e.target.files)); e.target.value=''; }
+function handleDragOver(e){ e.preventDefault(); document.getElementById('file-drop-zone').classList.add('drag-over'); }
+function handleDragLeave(e){ document.getElementById('file-drop-zone').classList.remove('drag-over'); }
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('file-drop-zone').classList.remove('drag-over');
+  addFiles(Array.from(e.dataTransfer.files));
+}
+function addFiles(files){
+  const maxSize=52428800; // 50MB
+  files.forEach(f=>{
+    if(f.size>maxSize){ showToast(`${f.name} supera el límite de 50MB.`,'error'); return; }
+    if(!selectedFiles.find(x=>x.name===f.name && x.size===f.size)) selectedFiles.push(f);
+  });
+  renderSelectedFiles();
+}
+function removeFile(idx,e){
+  e.stopPropagation();
+  selectedFiles.splice(idx,1);
+  renderSelectedFiles();
+}
+
+async function uploadFiles(requestId){
+  if(!selectedFiles.length || !USE_SUPABASE) return [];
+  const uploaded=[];
+  for(const file of selectedFiles){
+    try{
+      const ext=file.name.split('.').pop();
+      const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const path=`req-${requestId}-${Date.now()}-${safeName}`;
+      const res=await fetch(`${SB_URL}/storage/v1/object/aprobaciones-docs/${path}`,{
+        method:'POST',
+        headers:{ 'Authorization':'Bearer '+SB_KEY, 'Content-Type':file.type||'application/octet-stream', 'x-upsert':'true' },
+        body:file,
+      });
+      if(res.ok){
+        uploaded.push({
+          name:file.name,
+          url:`${SB_URL}/storage/v1/object/public/aprobaciones-docs/${path}`,
+          type:file.type,
+          size:file.size,
+        });
+      }
+    }catch(e){ console.warn('Error subiendo archivo:',file.name,e); }
+  }
+  return uploaded;
+}
+
+function renderDetailAttachments(req){
+  const card=document.getElementById('detail-attachments-card');
+  if(!req.attachments||!req.attachments.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  document.getElementById('detail-attachments-count').textContent=`${req.attachments.length} archivo${req.attachments.length>1?'s':''}`;
+  document.getElementById('detail-attachments-list').innerHTML=req.attachments.map(att=>{
+    const cat=getFileCategory(att.type||'',att.name);
+    return `<a class="attachment-item" href="${att.url}" target="_blank" rel="noopener">
+      <div class="file-icon ${cat}" style="width:32px;height:32px">${getFileLabel(att.type||'',att.name)}</div>
+      <span class="file-name">${att.name}</span>
+      <span class="file-size">${att.size?formatSize(att.size):''}</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" stroke-width="2" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </a>`;
+  }).join('');
+}
+
 // ── NOTIFICACIÓN POR CORREO ───────────────────────────────
 async function notifyNextApprover(nextUser, fromUser, req){
   const appUrl = window.location.origin + window.location.pathname;
@@ -1306,9 +1464,10 @@ async function notifyNextApprover(nextUser, fromUser, req){
 // ── NEW REQUEST ───────────────────────────────────────────
 function openNewModal(){
   selectedApprovers=[];
+  selectedFiles=[];
   ['new-subject','new-description','new-deadline'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('new-priority').value='normal';
-  renderNewUserList(); renderChainPreview();
+  renderNewUserList(); renderChainPreview(); renderSelectedFiles();
   document.getElementById('modal-new').classList.add('open');
 }
 function renderNewUserList(){
@@ -1337,14 +1496,33 @@ function renderChainPreview(){
   }).join('');
 }
 function removeApprover(uid,e){ e.stopPropagation(); selectedApprovers=selectedApprovers.filter(id=>id!==uid); renderNewUserList(); renderChainPreview(); }
-function createRequest(){
+async function createRequest(){
   const subject=document.getElementById('new-subject').value.trim();
   if(!subject){showToast('El tema es obligatorio.','error');return;}
   if(!selectedApprovers.length){showToast('Selecciona al menos un aprobador.','error');return;}
   const newCode='SP-'+String(nextId).padStart(3,'0');
-  requests.unshift({id:nextId++,code:newCode,subject,description:document.getElementById('new-description').value.trim(),priority:document.getElementById('new-priority').value,createdAt:new Date().toISOString().slice(0,10),deadline:document.getElementById('new-deadline').value||null,approvers:selectedApprovers.map(uid=>({userId:uid,status:'pending',comment:'',date:null}))});
+  const newId=nextId++;
+  // Subir archivos si los hay
+  let attachments=[];
+  if(selectedFiles.length){
+    showToast('Subiendo archivos…','');
+    attachments=await uploadFiles(newId);
+  }
+  requests.unshift({
+    id:newId, code:newCode, subject,
+    description:document.getElementById('new-description').value.trim(),
+    priority:document.getElementById('new-priority').value,
+    createdAt:new Date().toISOString().slice(0,10),
+    deadline:document.getElementById('new-deadline').value||null,
+    createdBy:CURRENT_USER_ID,
+    attachments,
+    approvers:selectedApprovers.map(uid=>({userId:uid,status:'pending',comment:'',date:null})),
+  });
   saveData();
-  closeModal('modal-new'); showToast('Solicitud creada y enviada.','success'); updateStats(); renderTable();
+  selectedFiles=[];
+  closeModal('modal-new');
+  showToast('Solicitud creada y enviada.','success');
+  updateStats(); renderTable();
 }
 
 // ── USERS VIEW ────────────────────────────────────────────
