@@ -1318,12 +1318,12 @@ function confirmAction(){
   closeModal('modal-action');
   showToast(type==='approve'?'Solicitud aprobada correctamente.':'Solicitud rechazada.',type==='approve'?'success':'error');
 
-  // Notificar al siguiente aprobador si la acción fue una aprobación
+  // Notificar al siguiente aprobador (cualquier usuario con email, sin importar su estado)
   if(type==='approve' && getRequestStatus(req)==='pending'){
     const nextIdx = getCurrentApproverIdx(req);
     if(nextIdx !== -1){
       const nextUser = getUser(req.approvers[nextIdx].userId);
-      if(nextUser && nextUser.email && nextUser.status==='active'){
+      if(nextUser && nextUser.email){
         notifyNextApprover(nextUser, actorUser, req);
       }
     }
@@ -1433,6 +1433,7 @@ function renderDetailAttachments(req){
 // ── NOTIFICACIÓN POR CORREO ───────────────────────────────
 async function notifyNextApprover(nextUser, fromUser, req){
   const appUrl = window.location.origin + window.location.pathname;
+  console.log('[Notificación] Enviando correo a:', nextUser.email, '| Solicitud:', req.code);
   try {
     const res = await fetch(
       'https://zwgyyfjvonbblgkwmphn.supabase.co/functions/v1/notify-approver',
@@ -1451,13 +1452,19 @@ async function notifyNextApprover(nextUser, fromUser, req){
       }
     );
     const data = await res.json();
+    console.log('[Notificación] Respuesta Resend:', data);
     if(data.ok){
-      showToast('Correo enviado a ' + nextUser.name + '.', 'success');
+      showToast('✉ Turno notificado a ' + nextUser.name + ' (' + nextUser.email + ').', 'success');
     } else if(data.reason === 'email_not_configured'){
-      console.info('Email no configurado en Supabase. Agrega RESEND_API_KEY en Edge Functions → Secrets.');
+      showToast('Email no configurado. Agrega RESEND_API_KEY en Supabase.', 'error');
+    } else {
+      // Resend aceptó pero puede haber restricción de dominio
+      console.warn('[Notificación] Resend retornó error:', data.error);
+      showToast('El correo fue enviado pero puede necesitar dominio verificado en Resend.', '');
     }
   } catch(e){
-    console.warn('No se pudo enviar la notificación por correo:', e);
+    console.error('[Notificación] Error llamando Edge Function:', e);
+    showToast('No se pudo conectar con el servicio de correo.', 'error');
   }
 }
 
