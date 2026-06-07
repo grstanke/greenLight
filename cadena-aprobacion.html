@@ -908,7 +908,7 @@ const SB_HDR = () => ({
 
 // ── DATOS POR DEFECTO ─────────────────────────────────────
 const DEFAULT_USERS = [
-  { id:1, name:'Gerardo Stanke',  role:'Administrador',        email:'gstanke@territoria.cl',  initials:'GS', color:0, status:'active',  dept:'Dirección',   phone:'+56 9 1234 5678', perm:'admin'    },
+  { id:1, name:'Guillermo Stanke', role:'Administrador',        email:'gstanke@territoria.cl',  initials:'GS', color:0, status:'active',  dept:'Dirección',   phone:'+56 9 1234 5678', perm:'admin'    },
   { id:2, name:'Ana Torres',      role:'Gerente de Proyectos', email:'atorres@territoria.cl',  initials:'AT', color:1, status:'active',  dept:'Proyectos',   phone:'+56 9 2345 6789', perm:'approver' },
   { id:3, name:'Carlos Rojas',    role:'Director Financiero',  email:'crojas@territoria.cl',   initials:'CR', color:2, status:'active',  dept:'Finanzas',    phone:'+56 9 3456 7890', perm:'approver' },
   { id:4, name:'María López',     role:'Jefa de Operaciones',  email:'mlopez@territoria.cl',   initials:'ML', color:3, status:'active',  dept:'Operaciones', phone:'+56 9 4567 8901', perm:'approver' },
@@ -1726,7 +1726,8 @@ function openInviteModal(uid){
   document.getElementById('invite-modal-sub').textContent=`Para: ${u.name}`;
   document.getElementById('invite-email-to').textContent=u.email;
   document.getElementById('invite-email-title').textContent=`Hola ${u.name.split(' ')[0]}, has sido invitado`;
-  document.getElementById('invite-email-body').textContent=`Gerardo Stanke te ha invitado a acceder al sistema de cadena de aprobaciones de Territoria. Podrás revisar y aprobar solicitudes que se te asignen como parte de los flujos de trabajo del equipo.`;
+  const adminName = getUser(CURRENT_USER_ID)?.name || 'El administrador';
+  document.getElementById('invite-email-body').textContent=`${adminName} te ha invitado a acceder al sistema de cadena de aprobaciones de Territoria. Podrás revisar y aprobar solicitudes que se te asignen como parte de los flujos de trabajo del equipo.`;
   document.getElementById('invite-message').value='';
   document.getElementById('invite-meta').innerHTML=`
     <div class="invite-meta-item"><div class="invite-meta-label">Destinatario</div><div class="invite-meta-value">${u.name}</div></div>
@@ -1769,7 +1770,7 @@ async function sendInvite(){
     const body=encodeURIComponent(
       'Hola '+nombre+',\n\n'+cuerpo+'\n\n'
       +'Para activar tu cuenta, haz clic en el siguiente enlace:\n'+link+'\n\n'
-      +'(Enlace valido por 72 horas)\n\nSaludos,\nGerardo Stanke\nTerritoria SPA'
+      +'(Enlace valido por 72 horas)\n\nSaludos,\n'+(getUser(CURRENT_USER_ID)?.name||'Administrador')+'\nTerritoria SPA'
     );
     const a=document.createElement('a');
     a.href='mailto:'+u.email+'?subject='+subject+'&body='+body;
