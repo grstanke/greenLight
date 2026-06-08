@@ -1833,14 +1833,19 @@ async function checkInviteHash(){
     if(!u){ showActivateError('El usuario asociado a esta invitación ya no existe.'); return; }
     if(u.status==='active'){ showActivateError('Esta cuenta ya fue activada. Puedes ingresar directamente.'); return; }
     activatingToken = token;
-    const av=document.getElementById('activate-avatar');
-    av.textContent=u.initials;
-    av.className='';
-    av.style.cssText='width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px';
-    av.classList.add('av-'+u.color);
-    document.getElementById('activate-name').textContent  = u.name;
-    document.getElementById('activate-role').textContent  = u.role+(u.dept?' · '+u.dept:'');
-    document.getElementById('activate-email').textContent = u.email;
+    // Restaurar el modal al estado original (por si showActivateError lo modificó antes)
+    const formGrid = document.querySelector('#modal-activate .modal-body .form-grid');
+    if(formGrid) formGrid.style.display = '';
+    document.querySelector('#modal-activate .modal-footer').innerHTML =
+      `<button class="btn btn-gold" style="width:100%;justify-content:center;padding:11px" onclick="activateAccount()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Activar mi cuenta
+      </button>`;
+    document.getElementById('activate-welcome').innerHTML =
+      `<div id="activate-avatar" style="width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px" class="av-${u.color}">${u.initials}</div>
+       <div id="activate-name" style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--navy)">${u.name}</div>
+       <div id="activate-role" style="font-size:13px;color:var(--gray-500);margin-top:2px">${u.role+(u.dept?' · '+u.dept:'')}</div>
+       <div id="activate-email" style="font-size:12px;color:var(--blue);margin-top:4px">${u.email}</div>`;
     document.getElementById('activate-pass').value  = '';
     document.getElementById('activate-pass2').value = '';
     document.getElementById('activate-error').style.display='none';
@@ -1860,7 +1865,7 @@ function showActivateError(msg){
     +'<p style="font-size:13px;color:var(--gray-500);line-height:1.6">'+msg+'</p>';
   document.querySelector('#modal-activate .modal-body .form-grid').style.display='none';
   document.querySelector('#modal-activate .modal-footer').innerHTML=
-    '<button class="btn btn-outline" style="width:100%;justify-content:center" onclick="closeModal(\'modal-activate\')">Cerrar</button>';
+    '<button class="btn btn-outline" style="width:100%;justify-content:center" onclick="closeModal(\'modal-activate\');showLoginScreen(true);">Ir al inicio de sesión</button>';
   modal.classList.add('open');
 }
 async function activateAccount(){
@@ -1955,6 +1960,10 @@ function renderSidebarUser(){
   if(hasInvite){
     // Activación de cuenta: mostrar modal sin requerir login
     await checkInviteHash();
+    // Si checkInviteHash no mostró el modal (error interno), ir al login
+    if(!document.getElementById('modal-activate').classList.contains('open')){
+      showLoginScreen(true);
+    }
     return;
   }
 
