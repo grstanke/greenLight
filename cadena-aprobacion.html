@@ -1172,7 +1172,7 @@ function renderTable(){
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--gold-dim);background:rgba(196,151,59,.1);border:1px solid rgba(196,151,59,.25);border-radius:4px;padding:1px 6px;flex-shrink:0">${req.code||''}</span>
           <div class="row-subject">${req.subject}</div>
-          ${hasFiles?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" stroke-width="2" title="${req.attachments.length} archivo(s)"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>`:''}
+          ${hasFiles?`<span title="${req.attachments.length} archivo${req.attachments.length>1?'s':''} adjunto${req.attachments.length>1?'s':''}" style="display:inline-flex;align-items:center;gap:3px;background:rgba(196,151,59,.12);border:1px solid rgba(196,151,59,.3);border-radius:4px;padding:1px 5px;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--gold-dim)" stroke-width="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg><span style="font-size:9px;font-weight:700;color:var(--gold-dim)">${req.attachments.length}</span></span>`:''}
         </div>
         <div class="row-desc">${req.description}</div>
         ${creator?`<div class="row-originator"><div class="mini-av av-${creator.color}">${creator.initials}</div><span style="font-size:11px;color:var(--gray-500)">${creator.name}</span></div>`:''}
