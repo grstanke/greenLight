@@ -731,9 +731,12 @@
         </div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveUser()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Guardar Usuario</button>
+    <div class="modal-footer" id="modal-user-footer" style="justify-content:space-between">
+      <div id="modal-user-delete-area"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="closeModal('modal-user')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveUser()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Guardar Usuario</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1035,6 +1038,7 @@ function doLogin(){
   if(!email||!pass){ errEl.textContent='Ingresa tu correo y contraseña.'; errEl.style.display='block'; return; }
   const u=USERS.find(u=>u.email.toLowerCase()===email);
   if(!u){ errEl.textContent='Correo no registrado en el sistema.'; errEl.style.display='block'; return; }
+  if(u.status==='deleted'){ errEl.textContent='Esta cuenta ha sido eliminada. Contacta al administrador.'; errEl.style.display='block'; return; }
   if(u.status==='invited'){ errEl.textContent='Tu cuenta aún no ha sido activada. Revisa tu correo de invitación.'; errEl.style.display='block'; return; }
   if(u.status!=='active'){ errEl.textContent='Tu cuenta está inactiva. Contacta al administrador.'; errEl.style.display='block'; return; }
   if(!u.password||u.password!==pass){ errEl.textContent='Contraseña incorrecta.'; errEl.style.display='block'; return; }
@@ -1478,7 +1482,7 @@ function openNewModal(){
   document.getElementById('modal-new').classList.add('open');
 }
 function renderNewUserList(){
-  document.getElementById('user-list').innerHTML = USERS.map(u=>{
+  document.getElementById('user-list').innerHTML = USERS.filter(u=>u.status!=='deleted').map(u=>{
     const sel=selectedApprovers.includes(u.id);
     return `<div class="user-item ${sel?'selected':''}" onclick="toggleApprover(${u.id})">
       <div class="user-item-avatar av-${u.color}">${u.initials}</div>
@@ -1535,10 +1539,11 @@ async function createRequest(){
 // ── USERS VIEW ────────────────────────────────────────────
 function renderUsersView(){
   const q=(document.getElementById('user-search')?.value||'').toLowerCase().trim();
-  const filtered = q ? USERS.filter(u=>u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q)||u.role.toLowerCase().includes(q)) : USERS;
-  document.getElementById('ustat-total').textContent   = USERS.length;
-  document.getElementById('ustat-active').textContent  = USERS.filter(u=>u.status==='active').length;
-  document.getElementById('ustat-invited').textContent = USERS.filter(u=>u.status==='invited').length;
+  const active = USERS.filter(u=>u.status!=='deleted');
+  const filtered = q ? active.filter(u=>u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q)||u.role.toLowerCase().includes(q)) : active;
+  document.getElementById('ustat-total').textContent   = active.length;
+  document.getElementById('ustat-active').textContent  = active.filter(u=>u.status==='active').length;
+  document.getElementById('ustat-invited').textContent = active.filter(u=>u.status==='invited').length;
 
   const grid=document.getElementById('users-grid');
   if(!filtered.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No se encontraron usuarios</p></div>`;return;}
@@ -1589,6 +1594,7 @@ function openAddUserModal(){
   document.getElementById('user-modal-sub').textContent='Completa los datos del nuevo integrante';
   ['user-name','user-lastname','user-email','user-role','user-dept','user-phone'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('user-perm').value='approver';
+  document.getElementById('modal-user-delete-area').innerHTML=''; // sin botón eliminar al agregar
   document.getElementById('modal-user').classList.add('open');
 }
 function openEditUserModal(uid){
@@ -1604,6 +1610,19 @@ function openEditUserModal(uid){
   document.getElementById('user-dept').value=u.dept||'';
   document.getElementById('user-phone').value=u.phone||'';
   document.getElementById('user-perm').value=u.perm||'approver';
+  // Botón eliminar (no se puede eliminar a uno mismo)
+  const deleteArea=document.getElementById('modal-user-delete-area');
+  if(uid===CURRENT_USER_ID){
+    deleteArea.innerHTML='';
+  } else {
+    deleteArea.innerHTML=`<button class="btn btn-sm" onclick="confirmDeleteUser(${uid})"
+      style="background:var(--red-bg);color:var(--red);border:1px solid rgba(168,50,50,.25)"
+      onmouseover="this.style.background='var(--red)';this.style.color='#fff'"
+      onmouseout="this.style.background='var(--red-bg)';this.style.color='var(--red)'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+      Eliminar usuario
+    </button>`;
+  }
   document.getElementById('modal-user').classList.add('open');
 }
 function saveUser(){
@@ -1639,6 +1658,34 @@ function saveUser(){
   renderSidebarUser();
 }
 
+// ── ELIMINAR USUARIO (soft delete) ────────────────────────
+function confirmDeleteUser(uid){
+  const u=getUser(uid); if(!u) return;
+  const area=document.getElementById('modal-user-delete-area');
+  // Reemplazar el botón con panel de confirmación
+  area.innerHTML=`
+    <div style="background:var(--red-bg);border:1px solid rgba(168,50,50,.25);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span style="font-size:12px;color:var(--red);flex:1">¿Eliminar a <strong>${u.name}</strong>?</span>
+      <button class="btn btn-sm" onclick="openEditUserModal(${uid})"
+        style="background:transparent;color:var(--gray-500);border:1px solid var(--gray-300);padding:3px 8px;font-size:11px">
+        No
+      </button>
+      <button class="btn btn-reject btn-sm" onclick="deleteUser(${uid})" style="padding:4px 10px;font-size:11px">
+        Sí, eliminar
+      </button>
+    </div>`;
+}
+function deleteUser(uid){
+  const u=getUser(uid); if(!u) return;
+  // Soft delete: marcar como eliminado (permanece en el array para las cadenas históricas)
+  u.status='deleted';
+  saveData();
+  closeModal('modal-user');
+  showToast(`${u.name} eliminado. Sus aprobaciones históricas se mantienen.`,'success');
+  renderUsersView(); updateStats();
+}
+
 // ── REASIGNACIÓN DE APROBACIONES ──────────────────────────
 let reassignFromUserId = null;
 let reassignToUserId   = null;
@@ -1670,7 +1717,7 @@ function openReassignModal(fromUserId, affected){
 
   // Lista de usuarios disponibles (excluir al usuario editado)
   document.getElementById('reassign-user-list').innerHTML = USERS
-    .filter(u => u.id !== fromUserId && u.status === 'active')
+    .filter(u => u.id !== fromUserId && u.status === 'active' && u.status !== 'deleted')
     .map(u => `
       <div class="user-item" id="reassign-opt-${u.id}" onclick="selectReassignUser(${u.id})">
         <div class="user-item-avatar av-${u.color}">${u.initials}</div>
