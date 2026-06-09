@@ -1033,15 +1033,29 @@ const DEFAULT_REQUESTS = [
 ];
 
 // ── SUPABASE HELPERS ──────────────────────────────────────
+const SB_TIMEOUT_MS = 8000; // 8 segundos — si no responde, cae a localStorage
+
 async function sbFetch(path, opts = {}) {
-  const res = await fetch(SB_URL + '/rest/v1/' + path, { headers: SB_HDR(), ...opts });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const e = new Error(err.message || 'Supabase error ' + res.status);
-    e.status = res.status;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SB_TIMEOUT_MS);
+  try {
+    const res = await fetch(SB_URL + '/rest/v1/' + path, {
+      headers: SB_HDR(),
+      signal: controller.signal,
+      ...opts
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const e = new Error(err.message || 'Supabase error ' + res.status);
+      e.status = res.status;
+      throw e;
+    }
+    return res.status === 204 ? null : res.json();
+  } catch(e) {
+    clearTimeout(timer);
     throw e;
   }
-  return res.status === 204 ? null : res.json();
 }
 
 // ── CARGA Y GUARDADO ──────────────────────────────────────
@@ -2453,8 +2467,9 @@ function renderSidebarUser(){
 
   showLoading(true);
   document.getElementById('loading-msg').textContent =
-    USE_SUPABASE ? 'Conectando con Supabase…' : 'Cargando datos locales…';
+    USE_SUPABASE ? 'Conectando con el servidor… (máx. 8 seg)' : 'Cargando datos locales…';
   await loadData();
+  document.getElementById('loading-msg').textContent = 'Iniciando aplicación…';
   showLoading(false);
 
   if(hasInvite){
