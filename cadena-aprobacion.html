@@ -106,7 +106,7 @@
   .filter-tab { padding:5px 14px; border-radius:4px; font-size:12px; font-weight:500; cursor:pointer; color:var(--gray-500); transition:var(--transition); border:none; background:transparent; font-family:var(--font-body); }
   .filter-tab.active { background:var(--white); color:var(--navy); box-shadow:var(--shadow-sm); }
   .requests-table { background:var(--white); border:1px solid var(--gray-100); border-radius:var(--radius); overflow:hidden; }
-  .table-header { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 100px; padding:11px 20px; background:var(--cream); border-bottom:1px solid var(--gray-100); }
+  .table-header { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 90px 36px; padding:11px 20px; background:var(--cream); border-bottom:1px solid var(--gray-100); }
   .th { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:var(--gray-500); }
   .th-sort { display:inline-flex; align-items:center; gap:5px; cursor:pointer; user-select:none; transition:var(--transition); border-radius:3px; padding:2px 4px; margin:-2px -4px; }
   .th-sort:hover { color:var(--navy); background:rgba(11,29,53,.06); }
@@ -118,7 +118,7 @@
   .th-sort.asc  .sort-desc { opacity:.25; }
   .th-sort.desc .sort-desc { opacity:1; color:var(--gold); }
   .th-sort.desc .sort-asc  { opacity:.25; }
-  .table-row { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 100px; padding:14px 20px; border-bottom:1px solid var(--gray-100); align-items:center; cursor:pointer; transition:var(--transition); animation:fadeRow .3s ease both; }
+  .table-row { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 90px 36px; padding:14px 20px; border-bottom:1px solid var(--gray-100); align-items:center; cursor:pointer; transition:var(--transition); animation:fadeRow .3s ease both; }
   .table-row:last-child { border-bottom:none; }
   .table-row:hover { background:rgba(196,151,59,.04); }
   @keyframes fadeRow { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
@@ -541,6 +541,7 @@
             <div class="th"><span class="th-sort" data-field="createdAt" onclick="toggleSort('createdAt')">Creado<span class="sort-icon"><svg class="sort-asc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 0L8 5H0Z" fill="currentColor"/></svg><svg class="sort-desc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 5L0 0H8Z" fill="currentColor"/></svg></span></span></div>
             <div class="th"><span class="th-sort" data-field="deadline" onclick="toggleSort('deadline')">Vence<span class="sort-icon"><svg class="sort-asc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 0L8 5H0Z" fill="currentColor"/></svg><svg class="sort-desc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 5L0 0H8Z" fill="currentColor"/></svg></span></span></div>
             <div class="th"><span class="th-sort" data-field="status" onclick="toggleSort('status')">Estado<span class="sort-icon"><svg class="sort-asc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 0L8 5H0Z" fill="currentColor"/></svg><svg class="sort-desc" width="8" height="5" viewBox="0 0 8 5"><path d="M4 5L0 0H8Z" fill="currentColor"/></svg></span></span></div>
+            <div class="th"></div>
           </div>
           <div id="requests-list"></div>
         </div>
@@ -554,6 +555,10 @@
             Volver al Panel
           </button>
           <span id="detail-status-badge"></span>
+          <button class="btn btn-outline btn-sm" id="btn-pdf-detail" onclick="generateFichaCurrent()" style="margin-left:auto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+            Generar ficha PDF
+          </button>
         </div>
         <div style="margin-bottom:20px">
           <h2 id="detail-title" style="font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--navy);margin-bottom:6px"></h2>
@@ -1275,6 +1280,14 @@ function renderTable(){
       <div class="row-date">${formatDate(req.createdAt)}</div>
       <div class="row-deadline ${isUrgent(req.deadline)?'urgent':''}">${req.deadline?formatDate(req.deadline):'—'}</div>
       <div><span class="badge badge-${st}">${stText}</span></div>
+      <div style="display:flex;align-items:center;justify-content:center">
+        <button onclick="event.stopPropagation();generateFicha(${req.id})" title="Generar ficha PDF"
+          style="background:none;border:1px solid var(--gray-100);border-radius:5px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray-500);transition:var(--transition)"
+          onmouseover="this.style.borderColor='var(--navy)';this.style.color='var(--navy)';this.style.background='var(--gray-100)'"
+          onmouseout="this.style.borderColor='var(--gray-100)';this.style.color='var(--gray-500)';this.style.background='none'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><polyline points="9 9 10 9"/></svg>
+        </button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1342,6 +1355,7 @@ function showView(view){
 // ── DETAIL VIEW ───────────────────────────────────────────
 function openDetail(id){
   const req=requests.find(r=>r.id===id); if(!req) return;
+  currentDetailReqId = id; // guardar para botón PDF en el detalle
   const status=getRequestStatus(req), progress=getProgress(req), currentIdx=getCurrentApproverIdx(req);
   document.getElementById('detail-title').innerHTML =
     (req.code ? `<span style="font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--gold);background:rgba(196,151,59,.12);border:1px solid rgba(196,151,59,.3);border-radius:5px;padding:2px 9px;vertical-align:middle;margin-right:10px;font-family:var(--font-body)">${req.code}</span>` : '')
@@ -2083,6 +2097,186 @@ function goToMyProfile(){
       }
     });
   }, 120);
+}
+
+// ── GENERADOR DE FICHA PDF ────────────────────────────────
+let currentDetailReqId = null; // guardado al abrir detalle
+
+function generateFichaCurrent(){
+  if(currentDetailReqId) generateFicha(currentDetailReqId);
+}
+
+function generateFicha(reqId){
+  const req = requests.find(r=>r.id===reqId);
+  if(!req) return;
+
+  const STATUS_LABEL = { approved:'Aprobado', rejected:'Rechazado', pending:'Pendiente' };
+  const STATUS_COLOR = { approved:'#2A7A5E', rejected:'#A83232', pending:'#B07020' };
+  const STATUS_BG    = { approved:'#EAF5F0', rejected:'#FAF0F0', pending:'#FDF4E3' };
+  const PRIO_LABEL   = { normal:'Normal', high:'Alta', urgent:'Urgente' };
+
+  const creator  = req.createdBy ? getUser(req.createdBy) : null;
+  const status   = getRequestStatus(req);
+  const progress = getProgress(req);
+  const printDate = new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Cadena de aprobadores
+  const chainHTML = req.approvers.map((a,i)=>{
+    const u = getUser(a.userId);
+    const name = u ? u.name : `Usuario #${a.userId}`;
+    const role = u ? u.role : '';
+    const st   = a.status || 'pending';
+    const icon = st==='approved'?'✓' : st==='rejected'?'✗' : '⋯';
+    return `
+      <tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #EEE;text-align:center;font-weight:700;color:#888;font-size:13px">${i+1}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #EEE">
+          <div style="font-weight:600;font-size:13px;color:#0B1D35">${name}</div>
+          ${role?`<div style="font-size:11px;color:#7A7570">${role}</div>`:''}
+        </td>
+        <td style="padding:8px 12px;border-bottom:1px solid #EEE;text-align:center">
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${STATUS_BG[st]};color:${STATUS_COLOR[st]}">
+            ${icon} ${STATUS_LABEL[st]}
+          </span>
+        </td>
+        <td style="padding:8px 12px;border-bottom:1px solid #EEE;font-size:12px;color:#7A7570">${a.date?formatDate(a.date):'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #EEE;font-size:12px;color:#555;font-style:${a.comment?'italic':'normal'}">${a.comment||'—'}</td>
+      </tr>`;
+  }).join('');
+
+  // Adjuntos
+  const attachHTML = (req.attachments&&req.attachments.length)
+    ? req.attachments.map(att=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F0EDE4">
+          <span style="font-size:11px;font-weight:700;background:#F2EDE4;border-radius:3px;padding:1px 5px;color:#8B6A26">${att.name.split('.').pop().toUpperCase()}</span>
+          <a href="${att.url}" style="font-size:12px;color:#1A5A8A;text-decoration:none">${att.name}</a>
+          ${att.size?`<span style="font-size:11px;color:#BDB8AF;margin-left:auto">${att.size<1024*1024?(Math.round(att.size/1024))+'KB':(att.size/1024/1024).toFixed(1)+'MB'}</span>`:''}
+        </div>`).join('')
+    : '<p style="font-size:12px;color:#BDB8AF;margin:0">Sin archivos adjuntos</p>';
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ficha ${req.code} — Territoria</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:#fff; color:#0B1D35; font-size:13px; }
+  @media print {
+    body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .no-print { display:none; }
+    @page { margin:18mm 14mm; size:A4; }
+  }
+  .page { max-width:760px; margin:0 auto; padding:24px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;padding-bottom:18px;border-bottom:3px solid #0B1D35">
+    <div>
+      <div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#0B1D35;letter-spacing:.04em">Territoria</div>
+      <div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#C4973B;margin-top:2px;font-weight:600">Sistema de Aprobaciones</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:20px;font-weight:700;color:#C4973B;letter-spacing:.06em">${req.code}</div>
+      <div style="font-size:10px;color:#7A7570;margin-top:2px">Ficha generada el ${printDate}</div>
+    </div>
+  </div>
+
+  <!-- ESTADO GENERAL -->
+  <div style="display:flex;gap:10px;margin-bottom:20px">
+    <div style="flex:1;background:#F2EDE4;border-radius:6px;padding:12px 16px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:4px">Estado</div>
+      <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:100px;font-size:12px;font-weight:700;background:${STATUS_BG[status]};color:${STATUS_COLOR[status]}">
+        ${status==='approved'?'✓ Aprobada':status==='rejected'?'✗ Rechazada':'⋯ En proceso'}
+      </span>
+    </div>
+    <div style="flex:1;background:#F2EDE4;border-radius:6px;padding:12px 16px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:4px">Progreso</div>
+      <div style="height:8px;background:#e0dbd3;border-radius:4px;overflow:hidden;margin-bottom:4px">
+        <div style="height:100%;width:${progress}%;background:#C4973B;border-radius:4px"></div>
+      </div>
+      <div style="font-size:11px;color:#7A7570">${req.approvers.filter(a=>a.status!=='pending').length} de ${req.approvers.length} aprobaciones</div>
+    </div>
+    <div style="flex:1;background:#F2EDE4;border-radius:6px;padding:12px 16px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:4px">Prioridad</div>
+      <div style="font-size:14px;font-weight:700;color:#0B1D35">${PRIO_LABEL[req.priority]||'Normal'}</div>
+    </div>
+  </div>
+
+  <!-- ASUNTO -->
+  <div style="margin-bottom:20px">
+    <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:6px">Tema / Asunto</div>
+    <div style="font-size:17px;font-weight:700;color:#0B1D35;line-height:1.3">${req.subject}</div>
+    ${req.description?`<div style="font-size:13px;color:#7A7570;margin-top:6px;line-height:1.6">${req.description}</div>`:''}
+  </div>
+
+  <!-- INFORMACIÓN -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+    <div style="background:#F2EDE4;border-radius:6px;padding:10px 14px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:4px">Creado</div>
+      <div style="font-weight:600;font-size:13px">${formatDate(req.createdAt)}</div>
+    </div>
+    <div style="background:#F2EDE4;border-radius:6px;padding:10px 14px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:4px">Fecha Límite</div>
+      <div style="font-weight:600;font-size:13px;color:${isUrgent(req.deadline)?'#A83232':'#0B1D35'}">${req.deadline?formatDate(req.deadline):'—'}</div>
+    </div>
+    <div style="background:#F2EDE4;border-radius:6px;padding:10px 14px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:4px">Originador</div>
+      <div style="font-weight:600;font-size:13px">${creator?creator.name:'—'}</div>
+    </div>
+    <div style="background:#F2EDE4;border-radius:6px;padding:10px 14px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:4px">Código</div>
+      <div style="font-weight:700;font-size:14px;color:#8B6A26;letter-spacing:.06em">${req.code}</div>
+    </div>
+  </div>
+
+  <!-- CADENA DE APROBACIÓN -->
+  <div style="margin-bottom:20px">
+    <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:10px">Cadena de Aprobación</div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #EEE;border-radius:6px;overflow:hidden">
+      <thead>
+        <tr style="background:#F2EDE4">
+          <th style="padding:8px 12px;text-align:center;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7A7570;font-weight:700;border-bottom:1px solid #EEE;width:40px">#</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7A7570;font-weight:700;border-bottom:1px solid #EEE">Aprobador</th>
+          <th style="padding:8px 12px;text-align:center;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7A7570;font-weight:700;border-bottom:1px solid #EEE;width:120px">Estado</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7A7570;font-weight:700;border-bottom:1px solid #EEE;width:110px">Fecha</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7A7570;font-weight:700;border-bottom:1px solid #EEE">Comentario</th>
+        </tr>
+      </thead>
+      <tbody>${chainHTML}</tbody>
+    </table>
+  </div>
+
+  <!-- ADJUNTOS -->
+  <div style="margin-bottom:24px">
+    <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A7570;margin-bottom:10px">Archivos Adjuntos</div>
+    <div style="background:#F2EDE4;border-radius:6px;padding:12px 16px">${attachHTML}</div>
+  </div>
+
+  <!-- FIRMA / FOOTER -->
+  <div style="border-top:2px solid #EEE;padding-top:16px;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:10px;color:#BDB8AF">Territoria SPA · Sistema de Aprobaciones Internas · ${printDate}</div>
+    <div style="font-size:10px;color:#BDB8AF">Documento generado automáticamente</div>
+  </div>
+
+  <!-- BOTÓN IMPRIMIR (solo pantalla) -->
+  <div class="no-print" style="text-align:center;margin-top:28px">
+    <button onclick="window.print()" style="background:#0B1D35;color:#fff;border:none;border-radius:6px;padding:10px 28px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">
+      🖨 Imprimir / Guardar como PDF
+    </button>
+    <p style="font-size:11px;color:#BDB8AF;margin-top:8px">En el diálogo de impresión elige "Guardar como PDF"</p>
+  </div>
+
+</div>
+<script>setTimeout(()=>window.print(),400);</script>
+</body></html>`;
+
+  const win = window.open('','_blank','width=900,height=700');
+  if(win){ win.document.write(html); win.document.close(); }
+  else    { showToast('Permite las ventanas emergentes para generar la ficha.','error'); }
 }
 
 // ── ANALYTICS DASHBOARD ───────────────────────────────────
